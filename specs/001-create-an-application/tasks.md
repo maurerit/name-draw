@@ -43,13 +43,13 @@
 - [x] T001 Create Spring Boot backend project structure in `backend/` with Maven, H2, Spring Security OAuth2, Spring Data JPA dependencies
 - [x] T002 Create React + Vite frontend project structure in `frontend/` with TypeScript, OAuth integration, testing dependencies
 - [x] T003 [P] Configure backend linting (Checkstyle) and formatting (Google Java Format) in `backend/pom.xml`
-- [X] T004 [P] Configure frontend linting (ESLint) and formatting (Prettier) in `frontend/.eslintrc.js` and `frontend/.prettierrc`
+- [x] T004 [P] Configure frontend linting (ESLint) and formatting (Prettier) in `frontend/.eslintrc.js` and `frontend/.prettierrc`
 - [x] T005 [P] Create Docker configuration files: `backend/Dockerfile`, `frontend/Dockerfile`, `docker-compose.yml`, `docker-compose.prod.yml`
 
 ## Phase 3.2: Database and Configuration
-- [ ] T006 [P] Create H2 database configuration in `backend/src/main/resources/application.yml` and `application-dev.yml`
-- [ ] T007 [P] Create Flyway migration scripts in `backend/src/main/resources/db/migration/` for all entities
-- [ ] T008 [P] Configure OAuth2 providers (Facebook, Google) in `backend/src/main/resources/application.yml`
+- [x] T006 [P] Create H2 database configuration in `backend/src/main/resources/application.yml` and `application-dev.yml`
+- [x] T007 [P] Create Flyway migration scripts in `backend/src/main/resources/db/migration/` for all entities
+- [x] T008 [P] Configure OAuth2 providers (Facebook, Google) in `backend/src/main/resources/application.yml`
 
 ## Phase 3.3: Contract Tests First (TDD) ⚠️ MUST COMPLETE BEFORE 3.4
 **CRITICAL: These tests MUST be written and MUST FAIL before ANY implementation**
