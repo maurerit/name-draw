@@ -216,7 +216,7 @@ ios/ or android/
 5. **Update agent file incrementally**:
    - Spring Boot + React + Docker context
    - OAuth integration patterns
-   - JPA + PostgreSQL setup
+   - JPA + H2 setup
    - Testing with Testcontainers
 
 **Output**: data-model.md, /contracts/*, failing tests, quickstart.md, .github/copilot-instructions.md
