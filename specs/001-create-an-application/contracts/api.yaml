@@ -1,0 +1,830 @@
+openapi: 3.0.3
+info:
+  title: Name Draw Application API
+  description: API for managing name draws with social login
+  version: 1.0.0
+  contact:
+    name: Name Draw API Support
+    
+servers:
+  - url: http://localhost:8080/api/v1
+    description: Development server (HTTP allowed for local development only)
+  - url: https://api.yourdomain.com/v1
+    description: Production server (HTTPS required for OAuth)
+  - url: https://staging-api.yourdomain.com/v1
+    description: Staging server (HTTPS required for OAuth)
+
+security:
+  - OAuth2: []
+  - BearerAuth: []
+
+paths:
+  # Authentication Endpoints
+  /auth/login/{provider}:
+    get:
+      tags:
+        - Authentication
+      summary: Initiate OAuth login with provider
+      description: Redirects user to OAuth provider for authentication
+      parameters:
+        - name: provider
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [facebook, google]
+      responses:
+        '302':
+          description: Redirect to OAuth provider
+        '400':
+          description: Invalid provider
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/callback/{provider}:
+    post:
+      tags:
+        - Authentication
+      summary: Handle OAuth callback
+      description: Process OAuth callback and return JWT token
+      parameters:
+        - name: provider
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [facebook, google]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                code:
+                  type: string
+                  description: Authorization code from OAuth provider
+                state:
+                  type: string
+                  description: State parameter for CSRF protection
+              required:
+                - code
+                - state
+      responses:
+        '200':
+          description: Successful authentication
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Authentication failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/refresh:
+    post:
+      tags:
+        - Authentication
+      summary: Refresh JWT token
+      description: Get new JWT token using refresh token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refreshToken:
+                  type: string
+              required:
+                - refreshToken
+      responses:
+        '200':
+          description: Token refreshed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Invalid refresh token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/logout:
+    post:
+      tags:
+        - Authentication
+      summary: Logout user
+      description: Invalidate JWT token and logout user
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Successfully logged out
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # User Management Endpoints
+  /users/me:
+    get:
+      tags:
+        - Users
+      summary: Get current user profile
+      description: Get the profile of the authenticated user
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /users/me/draws:
+    get:
+      tags:
+        - Users
+      summary: Get user's draws
+      description: Get all draws created by or participated in by the user
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: role
+          in: query
+          schema:
+            type: string
+            enum: [creator, participant, all]
+            default: all
+        - name: state
+          in: query
+          schema:
+            type: string
+            enum: [JOINING, OPEN, ARCHIVED, all]
+            default: all
+      responses:
+        '200':
+          description: List of user's draws
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Draw'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # Draw Management Endpoints
+  /draws:
+    get:
+      tags:
+        - Draws
+      summary: List all draws
+      description: Get list of all draws (visibility based on state and participation)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: state
+          in: query
+          schema:
+            type: string
+            enum: [JOINING, OPEN, ARCHIVED]
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+      responses:
+        '200':
+          description: List of draws
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DrawPage'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    post:
+      tags:
+        - Draws
+      summary: Create new draw
+      description: Create a new name draw
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDrawRequest'
+      responses:
+        '201':
+          description: Draw created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Draw'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /draws/{drawId}:
+    get:
+      tags:
+        - Draws
+      summary: Get draw details
+      description: Get details of a specific draw
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: drawId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Draw details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Draw'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Draw not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    put:
+      tags:
+        - Draws
+      summary: Update draw
+      description: Update draw details (only by creator, only in JOINING state)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: drawId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateDrawRequest'
+      responses:
+        '200':
+          description: Draw updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Draw'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden (not creator or wrong state)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Draw not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /draws/{drawId}/join:
+    post:
+      tags:
+        - Draws
+      summary: Join draw
+      description: Join a draw as a participant
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: drawId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Successfully joined draw
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Participation'
+        '400':
+          description: Cannot join draw (wrong state, already joined, etc.)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Draw not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /draws/{drawId}/open:
+    post:
+      tags:
+        - Draws
+      summary: Open draw for drawing
+      description: Transition draw from JOINING to OPEN state (creator only)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: drawId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Draw opened successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Draw'
+        '400':
+          description: Cannot open draw (wrong state, insufficient participants, etc.)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden (not creator)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Draw not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /draws/{drawId}/draw:
+    post:
+      tags:
+        - Drawing
+      summary: Perform name draw
+      description: Draw a random name from the participant pool
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: drawId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Name drawn successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DrawResult'
+        '400':
+          description: Cannot draw (wrong state, already drawn, etc.)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden (not participant)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Draw not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Conflict (another draw in progress)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /draws/{drawId}/results:
+    get:
+      tags:
+        - Drawing
+      summary: Get draw results
+      description: Get results of completed draws (participants only for non-archived draws)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: drawId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Draw results
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DrawResult'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden (not participant and draw not archived)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Draw not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /draws/{drawId}/my-result:
+    get:
+      tags:
+        - Drawing
+      summary: Get my draw result
+      description: Get the name drawn by the authenticated user
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: drawId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: User's draw result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DrawResult'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden (not participant)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Draw not found or user hasn't drawn yet
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  securitySchemes:
+    OAuth2:
+      type: oauth2
+      flows:
+        authorizationCode:
+          authorizationUrl: /auth/login/{provider}
+          tokenUrl: /auth/callback/{provider}
+          scopes: {}
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        profilePictureUrl:
+          type: string
+          format: uri
+          nullable: true
+        isActive:
+          type: boolean
+      required:
+        - id
+        - name
+        - isActive
+
+    Draw:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        description:
+          type: string
+          nullable: true
+        state:
+          type: string
+          enum: [JOINING, OPEN, ARCHIVED]
+        drawDate:
+          type: string
+          format: date
+        participantCount:
+          type: integer
+          minimum: 0
+        maxParticipants:
+          type: integer
+          minimum: 1
+          maximum: 30
+        creator:
+          $ref: '#/components/schemas/User'
+        participants:
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
+        canJoin:
+          type: boolean
+          description: Whether current user can join this draw
+        canDraw:
+          type: boolean
+          description: Whether current user can draw from this draw
+        createdAt:
+          type: string
+          format: date-time
+        openedAt:
+          type: string
+          format: date-time
+          nullable: true
+        archivedAt:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+        - id
+        - title
+        - state
+        - drawDate
+        - participantCount
+        - maxParticipants
+        - creator
+        - participants
+        - canJoin
+        - canDraw
+        - createdAt
+
+    DrawPage:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/Draw'
+        totalElements:
+          type: integer
+        totalPages:
+          type: integer
+        size:
+          type: integer
+        number:
+          type: integer
+        first:
+          type: boolean
+        last:
+          type: boolean
+      required:
+        - content
+        - totalElements
+        - totalPages
+        - size
+        - number
+        - first
+        - last
+
+    Participation:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        draw:
+          $ref: '#/components/schemas/Draw'
+        joinedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - draw
+        - joinedAt
+
+    DrawResult:
+      type: object
+      properties:
+        drawId:
+          type: string
+          format: uuid
+        drawnUser:
+          $ref: '#/components/schemas/User'
+        drawnAt:
+          type: string
+          format: date-time
+      required:
+        - drawId
+        - drawnUser
+        - drawnAt
+
+    CreateDrawRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 100
+        description:
+          type: string
+          maxLength: 500
+          nullable: true
+        drawDate:
+          type: string
+          format: date
+        maxParticipants:
+          type: integer
+          minimum: 2
+          maximum: 30
+          default: 30
+      required:
+        - title
+        - drawDate
+
+    UpdateDrawRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 100
+        description:
+          type: string
+          maxLength: 500
+          nullable: true
+        drawDate:
+          type: string
+          format: date
+        maxParticipants:
+          type: integer
+          minimum: 2
+          maximum: 30
+
+    AuthResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+        tokenType:
+          type: string
+          example: Bearer
+        expiresIn:
+          type: integer
+          description: Token expiration time in seconds
+        user:
+          $ref: '#/components/schemas/User'
+      required:
+        - accessToken
+        - refreshToken
+        - tokenType
+        - expiresIn
+        - user
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error code
+        message:
+          type: string
+          description: Human-readable error message
+        details:
+          type: string
+          description: Additional error details
+          nullable: true
+        timestamp:
+          type: string
+          format: date-time
+        path:
+          type: string
+          description: Request path where error occurred
+      required:
+        - error
+        - message
+        - timestamp
+        - path
