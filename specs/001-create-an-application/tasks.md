@@ -61,8 +61,8 @@
 - [ ] T012 [P] Contract test POST /auth/logout in `backend/src/test/java/contract/AuthLogoutContractTest.java`
 
 ### User Management Contract Tests
-- [ ] T013 [P] Contract test GET /users/me in `backend/src/test/java/contract/UserProfileContractTest.java`
-- [ ] T014 [P] Contract test GET /users/me/draws in `backend/src/test/java/contract/UserDrawsContractTest.java`
+- [x] T013 [P] Contract test GET /users/me in `backend/src/test/java/contract/UserProfileContractTest.java`
+- [x] T014 [P] Contract test GET /users/me/draws in `backend/src/test/java/contract/UserDrawsContractTest.java`
 
 ### Draw Management Contract Tests
 - [ ] T015 [P] Contract test GET /draws in `backend/src/test/java/contract/DrawsListContractTest.java`
