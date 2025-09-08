@@ -106,21 +106,21 @@
 - **FR-020**: System MUST allow non-participants to view the participant list of open draws without seeing any draw results
 - **FR-021**: System MUST automatically archive draws that have only one participant when the draw date is reached
 - **FR-022**: System MUST prevent drawing activities in draws with only one participant
-- **FR-024**: System MUST validate all participant social accounts before transitioning draws from "joining" to "open" state
-- **FR-025**: System MUST automatically remove participants with deactivated social accounts from draws
-- **FR-026**: System MUST notify draw creators when participants are removed due to deactivated accounts
-- **FR-027**: System MUST maintain a queue record for each participant in each draw to track drawing eligibility
-- **FR-028**: System MUST remove a participant's queue record when they successfully draw a name
-- **FR-029**: System MUST only allow participants with active queue records to draw names
-- **FR-030**: System MUST automatically transition draws from "joining" to "open" state when 30 participants are reached
-- **FR-031**: System MUST allow participants to view their drawn names in archived draws
-- **FR-032**: System MUST allow non-participants to view participant lists in archived draws
-- **FR-033**: System MUST prevent all interactive actions (joining, drawing, state changes) in archived draws
-- **FR-034**: System MUST present users with a non-self name when they click draw, handling self-draws transparently in the backend
-- **FR-035**: System MUST limit re-draw attempts to the number of participants in the draw to prevent infinite loops
-- **FR-036**: System MUST display an error message if unable to find a non-self name after maximum re-draw attempts
-- **FR-037**: System MUST remove draw button/functionality after a participant has successfully drawn a name
-- **FR-038**: System MUST ensure only one participant can draw a name at any given time from the same draw, preventing concurrent drawing operations transparently to users
+- **FR-023**: System MUST validate all participant social accounts before transitioning draws from "joining" to "open" state
+- **FR-024**: System MUST automatically remove participants with deactivated social accounts from draws
+- **FR-025**: System MUST notify draw creators when participants are removed due to deactivated accounts
+- **FR-026**: System MUST maintain a queue record for each participant in each draw to track drawing eligibility
+- **FR-027**: System MUST remove a participant's queue record when they successfully draw a name
+- **FR-028**: System MUST only allow participants with active queue records to draw names
+- **FR-029**: System MUST automatically transition draws from "joining" to "open" state when 30 participants are reached
+- **FR-030**: System MUST allow participants to view their drawn names in archived draws
+- **FR-031**: System MUST allow non-participants to view participant lists in archived draws
+- **FR-032**: System MUST prevent all interactive actions (joining, drawing, state changes) in archived draws
+- **FR-033**: System MUST present users with a non-self name when they click draw, handling self-draws transparently in the backend
+- **FR-034**: System MUST limit re-draw attempts to the number of participants in the draw to prevent infinite loops
+- **FR-035**: System MUST display an error message if unable to find a non-self name after maximum re-draw attempts
+- **FR-036**: System MUST remove draw button/functionality after a participant has successfully drawn a name
+- **FR-037**: System MUST ensure only one participant can draw a name at any given time from the same draw, preventing concurrent drawing operations transparently to users
 
 ### Key Entities *(include if feature involves data)*
 - **User**: Represents authenticated individuals via social login, with profile information from OAuth provider

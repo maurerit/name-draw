@@ -7,7 +7,7 @@
 Updated the specification to reflect that the UI should prevent users from attempting to join draws that are already open or archived, rather than handling these as error scenarios:
 
 1. **Removed impossible user scenarios**: Eliminated acceptance scenarios where users try to join open/full draws since UI should prevent these attempts
-2. **Updated functional requirements**: Removed FR-021 and FR-031 about messaging for impossible scenarios; renumbered remaining requirements to FR-001 through FR-037  
+2. **Updated functional requirements**: Removed FR-021 and FR-031 about messaging for impossible scenarios; this created a gap in numbering (missing FR-023) that was later corrected  
 3. **Clarified edge cases**: Updated language to emphasize UI prevention rather than error handling
 4. **Maintained core functionality**: Kept all legitimate business logic about automatic transitions and viewing capabilities
 
