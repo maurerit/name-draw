@@ -139,7 +139,7 @@ All technical context has been clarified based on user requirements:
    - Backend: Java Spring Boot (constitutional requirement)
    - Frontend: React + Vite (constitutional requirement)
    - Authentication: OAuth2 with Facebook/Google providers
-   - Database: PostgreSQL for persistence
+   - Database: H2 for persistence
    - Queue: In-memory for high-performance draw operations
    - Containerization: Docker for deployment
 
