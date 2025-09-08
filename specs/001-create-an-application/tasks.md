@@ -40,11 +40,11 @@
 - **Docker**: Repository root
 
 ## Phase 3.1: Project Setup
-- [ ] T001 Create Spring Boot backend project structure in `backend/` with Maven, H2, Spring Security OAuth2, Spring Data JPA dependencies
-- [ ] T002 Create React + Vite frontend project structure in `frontend/` with TypeScript, OAuth integration, testing dependencies
-- [ ] T003 [P] Configure backend linting (Checkstyle) and formatting (Google Java Format) in `backend/pom.xml`
-- [ ] T004 [P] Configure frontend linting (ESLint) and formatting (Prettier) in `frontend/.eslintrc.js` and `frontend/.prettierrc`
-- [ ] T005 [P] Create Docker configuration files: `backend/Dockerfile`, `frontend/Dockerfile`, `docker-compose.yml`, `docker-compose.prod.yml`
+- [x] T001 Create Spring Boot backend project structure in `backend/` with Maven, H2, Spring Security OAuth2, Spring Data JPA dependencies
+- [x] T002 Create React + Vite frontend project structure in `frontend/` with TypeScript, OAuth integration, testing dependencies
+- [x] T003 [P] Configure backend linting (Checkstyle) and formatting (Google Java Format) in `backend/pom.xml`
+- [X] T004 [P] Configure frontend linting (ESLint) and formatting (Prettier) in `frontend/.eslintrc.js` and `frontend/.prettierrc`
+- [x] T005 [P] Create Docker configuration files: `backend/Dockerfile`, `frontend/Dockerfile`, `docker-compose.yml`, `docker-compose.prod.yml`
 
 ## Phase 3.2: Database and Configuration
 - [ ] T006 [P] Create H2 database configuration in `backend/src/main/resources/application.yml` and `application-dev.yml`
