@@ -64,7 +64,7 @@ Primary requirement: Social login-enabled name draw application where users can 
 - RED-GREEN-Refactor cycle enforced? Yes - tests written first ✓
 - Git commits show tests before implementation? Enforced by process ✓
 - Order: Contract→Integration→E2E→Unit strictly followed? Yes ✓
-- Real dependencies used? Testcontainers for PostgreSQL, actual OAuth providers for integration ✓
+- Real dependencies used? H2 (as documented in research.md), actual OAuth providers for integration ✓
 - Integration tests for: OAuth flows, draw operations, queue management ✓
 - FORBIDDEN: Implementation before test, skipping RED phase ✓
 
