@@ -28,12 +28,12 @@
 - Phase 3-4: Implementation execution (manual or via tools)
 
 ## Summary
-Primary requirement: Social login-enabled name draw application where users can create draws, join draws, and perform random name drawing with persistent results. Technical approach: Java Spring Boot backend with React + Vite frontend, OAuth integration for Facebook/Google authentication, PostgreSQL for data persistence, and in-memory queue management for high-performance concurrent draw operations.
+Primary requirement: Social login-enabled name draw application where users can create draws, join draws, and perform random name drawing with persistent results. Technical approach: Java Spring Boot backend with React + Vite frontend, OAuth integration for Facebook/Google authentication, H2 database for data persistence, and in-memory queue management for high-performance concurrent draw operations.
 
 ## Technical Context
 **Language/Version**: Java 17+ (Spring Boot 3.x), TypeScript/JavaScript (React 18+, Vite 4+)  
 **Primary Dependencies**: Spring Boot, Spring Security OAuth2, Spring Data JPA, React, Vite, Docker  
-**Storage**: PostgreSQL for main data, In-memory storage for draw queue (high-performance transactional operations)  
+**Storage**: H2 database for main data, In-memory storage for draw queue (high-performance transactional operations)  
 **Testing**: JUnit 5 + Testcontainers (backend), Jest + React Testing Library (frontend)  
 **Target Platform**: Containerized deployment (Docker), Web browsers (modern ES6+ support)
 **Project Type**: Web application (backend + frontend)  
