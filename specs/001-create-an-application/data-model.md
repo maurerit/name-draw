@@ -116,6 +116,7 @@
 **Purpose**: 
 - Atomic operations for concurrent draw management
 - Insert record when participant attempts to draw
+- Delete after the draw operation is complete
 - Primary key constraint ensures only one person can draw at a time
 - Minimal memory footprint (single UUID per active draw operation)
 
