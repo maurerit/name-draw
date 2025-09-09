@@ -74,7 +74,7 @@
 
 ### Drawing Operation Contract Tests
 - [x] T021 [P] Contract test POST /draws/{drawId}/draw in `backend/src/test/java/contract/DrawingPerformContractTest.java`
-- [ ] T022 [P] Contract test GET /draws/{drawId}/results in `backend/src/test/java/contract/DrawingResultsContractTest.java`
+- [x] T022 [P] Contract test GET /draws/{drawId}/results in `backend/src/test/java/contract/DrawingResultsContractTest.java`
 - [ ] T023 [P] Contract test GET /draws/{drawId}/my-result in `backend/src/test/java/contract/DrawingMyResultContractTest.java`
 
 ### Integration Tests
