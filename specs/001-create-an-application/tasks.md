@@ -69,7 +69,7 @@
 - [x] T016 [P] Contract test POST /draws in `backend/src/test/java/contract/DrawsCreateContractTest.java`
 - [x] T017 [P] Contract test GET /draws/{drawId} in `backend/src/test/java/contract/DrawsGetContractTest.java`
 - [x] T018 [P] Contract test PUT /draws/{drawId} in `backend/src/test/java/contract/DrawsUpdateContractTest.java`
-- [ ] T019 [P] Contract test POST /draws/{drawId}/join in `backend/src/test/java/contract/DrawsJoinContractTest.java`
+- [x] T019 [P] Contract test POST /draws/{drawId}/join in `backend/src/test/java/contract/DrawsJoinContractTest.java`
 - [ ] T020 [P] Contract test POST /draws/{drawId}/open in `backend/src/test/java/contract/DrawsOpenContractTest.java`
 
 ### Drawing Operation Contract Tests
