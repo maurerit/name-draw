@@ -76,8 +76,8 @@ Watch for these often-forgotten updates:
 
 ## Template Sync Status
 
-Last sync check: 2025-07-16
-- Constitution version: 2.1.1
+Last sync check: 2025-09-09
+- Constitution version: 1.0.0
 - Templates aligned: ❌ (missing versioning, observability details)
 
 ---

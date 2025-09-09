@@ -35,4 +35,3 @@ Constitution supersedes all other practices; Amendments require documentation, a
 
 
 **Version**: 1.0.0 | **Ratified**: 2025-09-08 | **Last Amended**: 2025-09-08
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
