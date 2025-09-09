@@ -66,7 +66,7 @@
 
 ### Draw Management Contract Tests
 - [x] T015 [P] Contract test GET /draws in `backend/src/test/java/contract/DrawsListContractTest.java`
-- [ ] T016 [P] Contract test POST /draws in `backend/src/test/java/contract/DrawsCreateContractTest.java`
+- [x] T016 [P] Contract test POST /draws in `backend/src/test/java/contract/DrawsCreateContractTest.java`
 - [ ] T017 [P] Contract test GET /draws/{drawId} in `backend/src/test/java/contract/DrawsGetContractTest.java`
 - [ ] T018 [P] Contract test PUT /draws/{drawId} in `backend/src/test/java/contract/DrawsUpdateContractTest.java`
 - [ ] T019 [P] Contract test POST /draws/{drawId}/join in `backend/src/test/java/contract/DrawsJoinContractTest.java`
