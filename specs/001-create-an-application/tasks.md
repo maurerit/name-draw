@@ -65,7 +65,7 @@
 - [x] T014 [P] Contract test GET /users/me/draws in `backend/src/test/java/contract/UserDrawsContractTest.java`
 
 ### Draw Management Contract Tests
-- [ ] T015 [P] Contract test GET /draws in `backend/src/test/java/contract/DrawsListContractTest.java`
+- [x] T015 [P] Contract test GET /draws in `backend/src/test/java/contract/DrawsListContractTest.java`
 - [ ] T016 [P] Contract test POST /draws in `backend/src/test/java/contract/DrawsCreateContractTest.java`
 - [ ] T017 [P] Contract test GET /draws/{drawId} in `backend/src/test/java/contract/DrawsGetContractTest.java`
 - [ ] T018 [P] Contract test PUT /draws/{drawId} in `backend/src/test/java/contract/DrawsUpdateContractTest.java`
