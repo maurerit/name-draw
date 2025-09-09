@@ -79,7 +79,7 @@
 
 ### Integration Tests
 - [x] T024 [P] Integration test draw creator flow in `backend/src/test/java/integration/DrawCreatorFlowTest.java`
-- [ ] T025 [P] Integration test participant flow in `backend/src/test/java/integration/ParticipantFlowTest.java`
+- [x] T025 [P] Integration test participant flow in `backend/src/test/java/integration/ParticipantFlowTest.java`
 - [ ] T026 [P] Integration test edge cases (self-draws, concurrent access) in `backend/src/test/java/integration/EdgeCasesTest.java`
 
 ## Phase 3.4: Entity Models (ONLY after tests are failing)
