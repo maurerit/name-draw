@@ -3,6 +3,7 @@ package contract;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Map;
 import org.junit.jupiter.api.DisplayName;
@@ -14,6 +15,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultActions;
 
 /**
  * Contract test for POST /auth/callback/{provider}
@@ -48,11 +50,7 @@ class AuthCallbackContractTest {
             "state", "csrf_protection_state_token");
 
     // When calling the OAuth callback endpoint
-    mockMvc
-        .perform(
-            post("/api/v1/auth/callback/{provider}", provider)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(callbackRequest)))
+    sendOAuthCallback(provider, callbackRequest)
 
         // Then should return successful authentication with AuthResponse schema
         .andExpect(status().isOk())
@@ -78,11 +76,7 @@ class AuthCallbackContractTest {
             "state", "csrf_protection_state_token");
 
     // When calling the OAuth callback endpoint
-    mockMvc
-        .perform(
-            post("/api/v1/auth/callback/{provider}", provider)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(callbackRequest)))
+    sendOAuthCallback(provider, callbackRequest)
 
         // Then should return successful authentication with AuthResponse schema
         .andExpect(status().isOk())
@@ -109,11 +103,7 @@ class AuthCallbackContractTest {
             );
 
     // When calling the OAuth callback endpoint
-    mockMvc
-        .perform(
-            post("/api/v1/auth/callback/{provider}", provider)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(invalidRequest)))
+    sendOAuthCallback(provider, invalidRequest)
 
         // Then should return 400 Bad Request with ErrorResponse schema
         .andExpect(status().isBadRequest())
@@ -136,11 +126,7 @@ class AuthCallbackContractTest {
             );
 
     // When calling the OAuth callback endpoint
-    mockMvc
-        .perform(
-            post("/api/v1/auth/callback/{provider}", provider)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(invalidRequest)))
+    sendOAuthCallback(provider, invalidRequest)
 
         // Then should return 400 Bad Request with ErrorResponse schema
         .andExpect(status().isBadRequest())
@@ -162,11 +148,7 @@ class AuthCallbackContractTest {
             "state", "csrf_protection_state_token");
 
     // When calling the OAuth callback endpoint
-    mockMvc
-        .perform(
-            post("/api/v1/auth/callback/{provider}", provider)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(invalidRequest)))
+    sendOAuthCallback(provider, invalidRequest)
 
         // Then should return 401 Unauthorized with ErrorResponse schema
         .andExpect(status().isUnauthorized())
@@ -188,11 +170,7 @@ class AuthCallbackContractTest {
             "state", "csrf_protection_state_token");
 
     // When calling the OAuth callback endpoint
-    mockMvc
-        .perform(
-            post("/api/v1/auth/callback/{provider}", invalidProvider)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(callbackRequest)))
+    sendOAuthCallback(invalidProvider, callbackRequest)
 
         // Then should return 400 Bad Request with ErrorResponse schema
         .andExpect(status().isBadRequest())
@@ -214,11 +192,7 @@ class AuthCallbackContractTest {
             "state", "mismatched_state_token");
 
     // When calling the OAuth callback endpoint
-    mockMvc
-        .perform(
-            post("/api/v1/auth/callback/{provider}", provider)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(callbackRequest)))
+    sendOAuthCallback(provider, callbackRequest)
 
         // Then should return 401 Unauthorized due to CSRF validation failure
         .andExpect(status().isUnauthorized())
@@ -227,5 +201,14 @@ class AuthCallbackContractTest {
         .andExpect(jsonPath("$.message").exists())
         .andExpect(jsonPath("$.timestamp").exists())
         .andExpect(jsonPath("$.path").value("/api/v1/auth/callback/" + provider));
+  }
+
+  private ResultActions sendOAuthCallback(String provider, Map<String, String> callbackRequest)
+        throws Exception, JsonProcessingException {
+    return mockMvc
+        .perform(
+            post("/api/v1/auth/callback/{provider}", provider)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(callbackRequest)));
   }
 }

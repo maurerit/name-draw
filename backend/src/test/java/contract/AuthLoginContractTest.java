@@ -12,6 +12,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultActions;
 
 /**
  * Contract test for GET /auth/login/{provider}
@@ -39,9 +40,7 @@ class AuthLoginContractTest {
     String provider = "google";
 
     // When calling the OAuth login endpoint
-    mockMvc
-        .perform(
-            get("/api/v1/auth/login/{provider}", provider).contentType(MediaType.APPLICATION_JSON))
+    sendLoginRequest(provider)
 
         // Then should redirect to Google OAuth provider
         .andExpect(status().isFound()) // 302 redirect
@@ -58,9 +57,7 @@ class AuthLoginContractTest {
     String provider = "facebook";
 
     // When calling the OAuth login endpoint
-    mockMvc
-        .perform(
-            get("/api/v1/auth/login/{provider}", provider).contentType(MediaType.APPLICATION_JSON))
+    sendLoginRequest(provider)
 
         // Then should redirect to Facebook OAuth provider
         .andExpect(status().isFound()) // 302 redirect
@@ -76,10 +73,7 @@ class AuthLoginContractTest {
     String invalidProvider = "twitter";
 
     // When calling the OAuth login endpoint
-    mockMvc
-        .perform(
-            get("/api/v1/auth/login/{provider}", invalidProvider)
-                .contentType(MediaType.APPLICATION_JSON))
+    sendLoginRequest(invalidProvider)
 
         // Then should return 400 Bad Request with ErrorResponse schema
         .andExpect(status().isBadRequest())
@@ -97,9 +91,7 @@ class AuthLoginContractTest {
     String provider = "google";
 
     // When calling the OAuth login endpoint
-    mockMvc
-        .perform(
-            get("/api/v1/auth/login/{provider}", provider).contentType(MediaType.APPLICATION_JSON))
+    sendLoginRequest(provider)
 
         // Then should include state parameter for CSRF protection
         .andExpect(status().isFound())
@@ -114,9 +106,7 @@ class AuthLoginContractTest {
     String provider = "google";
 
     // When calling the OAuth login endpoint
-    mockMvc
-        .perform(
-            get("/api/v1/auth/login/{provider}", provider).contentType(MediaType.APPLICATION_JSON))
+    sendLoginRequest(provider)
 
         // Then should include required scopes (profile, email)
         .andExpect(status().isFound())
@@ -130,5 +120,12 @@ class AuthLoginContractTest {
                         org.hamcrest.Matchers.anyOf(
                             org.hamcrest.Matchers.containsString("profile"),
                             org.hamcrest.Matchers.containsString("email")))));
+  }
+
+  private ResultActions sendLoginRequest(String invalidProvider) throws Exception {
+    return mockMvc
+        .perform(
+            get("/api/v1/auth/login/{provider}", invalidProvider)
+                .contentType(MediaType.APPLICATION_JSON));
   }
 }

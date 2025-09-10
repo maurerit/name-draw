@@ -3,6 +3,7 @@ package contract;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Map;
 import org.junit.jupiter.api.DisplayName;
@@ -14,6 +15,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultActions;
 
 /**
  * Contract test for POST /auth/refresh
@@ -43,11 +45,7 @@ class AuthRefreshContractTest {
     Map<String, String> refreshRequest = Map.of("refreshToken", "valid_refresh_token_abc123xyz");
 
     // When calling the token refresh endpoint
-    mockMvc
-        .perform(
-            post("/api/v1/auth/refresh")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(refreshRequest)))
+    sendRefreshTokenRequest(refreshRequest)
 
         // Then should return new tokens with AuthResponse schema
         .andExpect(status().isOk())
@@ -69,11 +67,7 @@ class AuthRefreshContractTest {
     Map<String, String> refreshRequest = Map.of("refreshToken", "valid_refresh_token_def456uvw");
 
     // When calling the token refresh endpoint
-    mockMvc
-        .perform(
-            post("/api/v1/auth/refresh")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(refreshRequest)))
+    sendRefreshTokenRequest(refreshRequest)
 
         // Then should return new access token (different from original)
         .andExpect(status().isOk())
@@ -92,11 +86,7 @@ class AuthRefreshContractTest {
     Map<String, String> expiredRequest = Map.of("refreshToken", "expired_refresh_token_old123");
 
     // When calling the token refresh endpoint
-    mockMvc
-        .perform(
-            post("/api/v1/auth/refresh")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(expiredRequest)))
+    sendRefreshTokenRequest(expiredRequest)
 
         // Then should return 401 Unauthorized with ErrorResponse schema
         .andExpect(status().isUnauthorized())
@@ -114,11 +104,7 @@ class AuthRefreshContractTest {
     Map<String, String> invalidRequest = Map.of("refreshToken", "invalid_malformed_token_999");
 
     // When calling the token refresh endpoint
-    mockMvc
-        .perform(
-            post("/api/v1/auth/refresh")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(invalidRequest)))
+    sendRefreshTokenRequest(invalidRequest)
 
         // Then should return 401 Unauthorized with ErrorResponse schema
         .andExpect(status().isUnauthorized())
@@ -137,11 +123,7 @@ class AuthRefreshContractTest {
         Map.of("refreshToken", "revoked_refresh_token_blacklisted");
 
     // When calling the token refresh endpoint
-    mockMvc
-        .perform(
-            post("/api/v1/auth/refresh")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(revokedRequest)))
+    sendRefreshTokenRequest(revokedRequest)
 
         // Then should return 401 Unauthorized with ErrorResponse schema
         .andExpect(status().isUnauthorized())
@@ -159,11 +141,7 @@ class AuthRefreshContractTest {
     Map<String, String> emptyRequest = Map.of();
 
     // When calling the token refresh endpoint
-    mockMvc
-        .perform(
-            post("/api/v1/auth/refresh")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(emptyRequest)))
+    sendRefreshTokenRequest(emptyRequest)
 
         // Then should return 400 Bad Request due to validation failure
         .andExpect(status().isBadRequest())
@@ -181,11 +159,7 @@ class AuthRefreshContractTest {
     Map<String, String> emptyTokenRequest = Map.of("refreshToken", "");
 
     // When calling the token refresh endpoint
-    mockMvc
-        .perform(
-            post("/api/v1/auth/refresh")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(emptyTokenRequest)))
+    sendRefreshTokenRequest(emptyTokenRequest)
 
         // Then should return 400 Bad Request due to validation failure
         .andExpect(status().isBadRequest())
@@ -203,11 +177,7 @@ class AuthRefreshContractTest {
     Map<String, String> malformedRequest = Map.of("refreshToken", "not.a.valid.jwt.token.format");
 
     // When calling the token refresh endpoint
-    mockMvc
-        .perform(
-            post("/api/v1/auth/refresh")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(malformedRequest)))
+    sendRefreshTokenRequest(malformedRequest)
 
         // Then should return 401 Unauthorized due to invalid token format
         .andExpect(status().isUnauthorized())
@@ -216,5 +186,13 @@ class AuthRefreshContractTest {
         .andExpect(jsonPath("$.message").exists())
         .andExpect(jsonPath("$.timestamp").exists())
         .andExpect(jsonPath("$.path").value("/api/v1/auth/refresh"));
+  }
+
+  private ResultActions sendRefreshTokenRequest(Map<String, String> refreshRequest) throws Exception, JsonProcessingException {
+    return mockMvc
+        .perform(
+            post("/api/v1/auth/refresh")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(refreshRequest)));
   }
 }

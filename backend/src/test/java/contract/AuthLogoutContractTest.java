@@ -13,6 +13,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultActions;
 
 /**
  * Contract test for POST /auth/logout
@@ -40,11 +41,7 @@ class AuthLogoutContractTest {
         "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.validTokenPayload.signature";
 
     // When calling the logout endpoint with valid authorization
-    mockMvc
-        .perform(
-            post("/api/v1/auth/logout")
-                .header(HttpHeaders.AUTHORIZATION, validJwtToken)
-                .contentType(MediaType.APPLICATION_JSON))
+    sendLogoutRequest(validJwtToken)
 
         // Then should return 200 OK for successful logout
         .andExpect(status().isOk());
@@ -75,11 +72,7 @@ class AuthLogoutContractTest {
     String invalidJwtToken = "Bearer invalid.jwt.token.format";
 
     // When calling the logout endpoint with invalid authorization
-    mockMvc
-        .perform(
-            post("/api/v1/auth/logout")
-                .header(HttpHeaders.AUTHORIZATION, invalidJwtToken)
-                .contentType(MediaType.APPLICATION_JSON))
+    sendLogoutRequest(invalidJwtToken)
 
         // Then should return 401 Unauthorized with ErrorResponse schema
         .andExpect(status().isUnauthorized())
@@ -98,11 +91,7 @@ class AuthLogoutContractTest {
         "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.expiredTokenPayload.signature";
 
     // When calling the logout endpoint with expired authorization
-    mockMvc
-        .perform(
-            post("/api/v1/auth/logout")
-                .header(HttpHeaders.AUTHORIZATION, expiredJwtToken)
-                .contentType(MediaType.APPLICATION_JSON))
+    sendLogoutRequest(expiredJwtToken)
 
         // Then should return 401 Unauthorized with ErrorResponse schema
         .andExpect(status().isUnauthorized())
@@ -121,11 +110,7 @@ class AuthLogoutContractTest {
         "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.tokenWithoutBearer.signature";
 
     // When calling the logout endpoint with malformed authorization
-    mockMvc
-        .perform(
-            post("/api/v1/auth/logout")
-                .header(HttpHeaders.AUTHORIZATION, malformedAuthHeader)
-                .contentType(MediaType.APPLICATION_JSON))
+    sendLogoutRequest(malformedAuthHeader)
 
         // Then should return 401 Unauthorized with ErrorResponse schema
         .andExpect(status().isUnauthorized())
@@ -144,11 +129,7 @@ class AuthLogoutContractTest {
         "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.revokedTokenPayload.signature";
 
     // When calling the logout endpoint with revoked authorization
-    mockMvc
-        .perform(
-            post("/api/v1/auth/logout")
-                .header(HttpHeaders.AUTHORIZATION, revokedJwtToken)
-                .contentType(MediaType.APPLICATION_JSON))
+    sendLogoutRequest(revokedJwtToken)
 
         // Then should return 401 Unauthorized with ErrorResponse schema
         .andExpect(status().isUnauthorized())
@@ -167,21 +148,13 @@ class AuthLogoutContractTest {
         "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.validTokenPayload.signature";
 
     // When calling the logout endpoint with valid authorization
-    mockMvc
-        .perform(
-            post("/api/v1/auth/logout")
-                .header(HttpHeaders.AUTHORIZATION, validJwtToken)
-                .contentType(MediaType.APPLICATION_JSON))
+    sendLogoutRequest(validJwtToken)
 
         // Then should return 200 OK for successful logout
         .andExpect(status().isOk());
 
     // And when attempting to use the same token again (e.g., for another logout)
-    mockMvc
-        .perform(
-            post("/api/v1/auth/logout")
-                .header(HttpHeaders.AUTHORIZATION, validJwtToken)
-                .contentType(MediaType.APPLICATION_JSON))
+    sendLogoutRequest(validJwtToken)
 
         // Then should return 401 Unauthorized (token has been invalidated)
         .andExpect(status().isUnauthorized())
@@ -199,11 +172,7 @@ class AuthLogoutContractTest {
     String emptyBearerToken = "Bearer ";
 
     // When calling the logout endpoint with empty Bearer token
-    mockMvc
-        .perform(
-            post("/api/v1/auth/logout")
-                .header(HttpHeaders.AUTHORIZATION, emptyBearerToken)
-                .contentType(MediaType.APPLICATION_JSON))
+    sendLogoutRequest(emptyBearerToken)
 
         // Then should return 401 Unauthorized with ErrorResponse schema
         .andExpect(status().isUnauthorized())
@@ -212,5 +181,13 @@ class AuthLogoutContractTest {
         .andExpect(jsonPath("$.message").exists())
         .andExpect(jsonPath("$.timestamp").exists())
         .andExpect(jsonPath("$.path").value("/api/v1/auth/logout"));
+  }
+
+  private ResultActions sendLogoutRequest(String validJwtToken) throws Exception {
+    return mockMvc
+        .perform(
+            post("/api/v1/auth/logout")
+                .header(HttpHeaders.AUTHORIZATION, validJwtToken)
+                .contentType(MediaType.APPLICATION_JSON));
   }
 }
