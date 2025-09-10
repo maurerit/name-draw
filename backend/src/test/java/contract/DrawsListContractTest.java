@@ -10,6 +10,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultActions;
 
 /**
  * Contract test for GET /draws endpoint
@@ -40,11 +41,7 @@ public class DrawsListContractTest {
 
     // When: GET /api/v1/draws
     // Then: Should return 200 with DrawPage JSON
-    mockMvc
-        .perform(
-            get("/api/v1/draws")
-                .header("Authorization", validJwtToken)
-                .contentType(MediaType.APPLICATION_JSON))
+    sendDrawsRequest(validJwtToken)
         .andExpect(status().isOk())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$.content").exists())
@@ -125,11 +122,7 @@ public class DrawsListContractTest {
 
     // When: GET /api/v1/draws with invalid token
     // Then: Should return 401 Unauthorized
-    mockMvc
-        .perform(
-            get("/api/v1/draws")
-                .header("Authorization", invalidJwtToken)
-                .contentType(MediaType.APPLICATION_JSON))
+    sendDrawsRequest(invalidJwtToken)
         .andExpect(status().isUnauthorized())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$.error").exists())
@@ -174,5 +167,13 @@ public class DrawsListContractTest {
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$.error").exists())
         .andExpect(jsonPath("$.message").exists());
+  }
+
+  private ResultActions sendDrawsRequest(String validJwtToken) throws Exception {
+    return mockMvc
+        .perform(
+            get("/api/v1/draws")
+                .header("Authorization", validJwtToken)
+                .contentType(MediaType.APPLICATION_JSON));
   }
 }

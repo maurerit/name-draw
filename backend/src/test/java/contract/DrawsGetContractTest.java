@@ -10,6 +10,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultActions;
 
 /**
  * Contract test for GET /draws/{drawId} endpoint
@@ -40,8 +41,7 @@ public class DrawsGetContractTest {
 
     // When: GET /api/v1/draws/{drawId}
     // Then: Should return 200 with Draw JSON
-    mockMvc
-        .perform(get("/api/v1/draws/{drawId}", validDrawId).header("Authorization", validJwtToken))
+    sendDrawRequest(validJwtToken, validDrawId)
         .andExpect(status().isOk())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$.id").exists())
@@ -80,9 +80,7 @@ public class DrawsGetContractTest {
 
     // When: GET /api/v1/draws/{drawId} for draw in JOINING state
     // Then: Should return draw with correct state and capabilities
-    mockMvc
-        .perform(
-            get("/api/v1/draws/{drawId}", joiningDrawId).header("Authorization", validJwtToken))
+    sendDrawRequest(validJwtToken, joiningDrawId)
         .andExpect(status().isOk())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$.id").value(joiningDrawId))
@@ -102,8 +100,7 @@ public class DrawsGetContractTest {
 
     // When: GET /api/v1/draws/{drawId} for draw in OPEN state
     // Then: Should return draw with correct state and capabilities
-    mockMvc
-        .perform(get("/api/v1/draws/{drawId}", openDrawId).header("Authorization", validJwtToken))
+    sendDrawRequest(validJwtToken, openDrawId)
         .andExpect(status().isOk())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$.id").value(openDrawId))
@@ -123,9 +120,7 @@ public class DrawsGetContractTest {
 
     // When: GET /api/v1/draws/{drawId} for draw in ARCHIVED state
     // Then: Should return draw with correct state and capabilities
-    mockMvc
-        .perform(
-            get("/api/v1/draws/{drawId}", archivedDrawId).header("Authorization", validJwtToken))
+    sendDrawRequest(validJwtToken, archivedDrawId)
         .andExpect(status().isOk())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$.id").value(archivedDrawId))
@@ -159,9 +154,7 @@ public class DrawsGetContractTest {
 
     // When: GET /api/v1/draws/{drawId} with invalid token
     // Then: Should return 401 Unauthorized
-    mockMvc
-        .perform(
-            get("/api/v1/draws/{drawId}", validDrawId).header("Authorization", invalidJwtToken))
+    sendDrawRequest(invalidJwtToken, validDrawId)
         .andExpect(status().isUnauthorized())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$.error").exists())
@@ -177,9 +170,7 @@ public class DrawsGetContractTest {
 
     // When: GET /api/v1/draws/{drawId} with non-existent ID
     // Then: Should return 404 Not Found
-    mockMvc
-        .perform(
-            get("/api/v1/draws/{drawId}", nonExistentDrawId).header("Authorization", validJwtToken))
+    sendDrawRequest(validJwtToken, nonExistentDrawId)
         .andExpect(status().isNotFound())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$.error").exists())
@@ -195,8 +186,7 @@ public class DrawsGetContractTest {
 
     // When: GET /api/v1/draws/{drawId} with invalid UUID format
     // Then: Should return 400 Bad Request
-    mockMvc
-        .perform(get("/api/v1/draws/{drawId}", invalidUuid).header("Authorization", validJwtToken))
+    sendDrawRequest(validJwtToken, invalidUuid)
         .andExpect(status().isBadRequest())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$.error").exists())
@@ -225,10 +215,7 @@ public class DrawsGetContractTest {
 
     // When: GET /api/v1/draws/{drawId} for draw with description
     // Then: Should return draw with description field
-    mockMvc
-        .perform(
-            get("/api/v1/draws/{drawId}", drawWithDescriptionId)
-                .header("Authorization", validJwtToken))
+    sendDrawRequest(validJwtToken, drawWithDescriptionId)
         .andExpect(status().isOk())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$.id").value(drawWithDescriptionId))
@@ -245,13 +232,16 @@ public class DrawsGetContractTest {
 
     // When: GET /api/v1/draws/{drawId} for draw without description
     // Then: Should return draw with null or missing description field
-    mockMvc
-        .perform(
-            get("/api/v1/draws/{drawId}", drawWithoutDescriptionId)
-                .header("Authorization", validJwtToken))
+    sendDrawRequest(validJwtToken, drawWithoutDescriptionId)
         .andExpect(status().isOk())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$.id").value(drawWithoutDescriptionId))
         .andExpect(jsonPath("$.description").isEmpty()); // Can be null/empty
+  }
+
+  private ResultActions sendDrawRequest(String validJwtToken, String joiningDrawId) throws Exception {
+    return mockMvc
+        .perform(
+            get("/api/v1/draws/{drawId}", joiningDrawId).header("Authorization", validJwtToken));
   }
 }

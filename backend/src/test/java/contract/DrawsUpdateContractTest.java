@@ -10,6 +10,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultActions;
 
 /**
  * Contract test for PUT /draws/{drawId} endpoint
@@ -50,12 +51,7 @@ public class DrawsUpdateContractTest {
 
     // When: PUT /api/v1/draws/{drawId}
     // Then: Should return 200 with updated Draw JSON
-    mockMvc
-        .perform(
-            put("/api/v1/draws/" + drawId)
-                .header("Authorization", validJwtToken)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(updateDrawRequest))
+    executeDrawUpdate(validJwtToken, drawId, updateDrawRequest)
         .andExpect(status().isOk())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$.id").value(drawId))
@@ -91,12 +87,7 @@ public class DrawsUpdateContractTest {
 
     // When: PUT /api/v1/draws/{drawId}
     // Then: Should return 200 with updated Draw JSON
-    mockMvc
-        .perform(
-            put("/api/v1/draws/" + drawId)
-                .header("Authorization", validJwtToken)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(updateDrawRequest))
+    executeDrawUpdate(validJwtToken, drawId, updateDrawRequest)
         .andExpect(status().isOk())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$.id").value(drawId))
@@ -131,12 +122,7 @@ public class DrawsUpdateContractTest {
 
     // When: PUT /api/v1/draws/{drawId} with invalid token
     // Then: Should return 401 Unauthorized
-    mockMvc
-        .perform(
-            put("/api/v1/draws/" + drawId)
-                .header("Authorization", invalidJwtToken)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(updateDrawRequest))
+    executeDrawUpdate(invalidJwtToken, drawId, updateDrawRequest)
         .andExpect(status().isUnauthorized())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$.error").exists())
@@ -153,12 +139,7 @@ public class DrawsUpdateContractTest {
 
     // When: PUT /api/v1/draws/{drawId} by non-creator
     // Then: Should return 403 Forbidden
-    mockMvc
-        .perform(
-            put("/api/v1/draws/" + drawId)
-                .header("Authorization", validJwtToken)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(updateDrawRequest))
+    executeDrawUpdate(validJwtToken, drawId, updateDrawRequest)
         .andExpect(status().isForbidden())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$.error").exists())
@@ -175,12 +156,7 @@ public class DrawsUpdateContractTest {
 
     // When: PUT /api/v1/draws/{drawId} for draw not in JOINING state
     // Then: Should return 403 Forbidden
-    mockMvc
-        .perform(
-            put("/api/v1/draws/" + drawId)
-                .header("Authorization", validJwtToken)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(updateDrawRequest))
+    executeDrawUpdate(validJwtToken, drawId, updateDrawRequest)
         .andExpect(status().isForbidden())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$.error").exists())
@@ -197,12 +173,7 @@ public class DrawsUpdateContractTest {
 
     // When: PUT /api/v1/draws/{drawId} for nonexistent draw
     // Then: Should return 404 Not Found
-    mockMvc
-        .perform(
-            put("/api/v1/draws/" + nonexistentDrawId)
-                .header("Authorization", validJwtToken)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(updateDrawRequest))
+    executeDrawUpdate(validJwtToken, nonexistentDrawId, updateDrawRequest)
         .andExpect(status().isNotFound())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$.error").exists())
@@ -220,12 +191,7 @@ public class DrawsUpdateContractTest {
 
     // When: PUT /api/v1/draws/{drawId} with title too long
     // Then: Should return 400 Bad Request
-    mockMvc
-        .perform(
-            put("/api/v1/draws/" + drawId)
-                .header("Authorization", validJwtToken)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(updateDrawRequest))
+    executeDrawUpdate(validJwtToken, drawId, updateDrawRequest)
         .andExpect(status().isBadRequest())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$.error").exists())
@@ -244,12 +210,7 @@ public class DrawsUpdateContractTest {
 
     // When: PUT /api/v1/draws/{drawId} with description too long
     // Then: Should return 400 Bad Request
-    mockMvc
-        .perform(
-            put("/api/v1/draws/" + drawId)
-                .header("Authorization", validJwtToken)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(updateDrawRequest))
+    executeDrawUpdate(validJwtToken, drawId, updateDrawRequest)
         .andExpect(status().isBadRequest())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$.error").exists())
@@ -266,12 +227,7 @@ public class DrawsUpdateContractTest {
 
     // When: PUT /api/v1/draws/{drawId} with maxParticipants too low
     // Then: Should return 400 Bad Request
-    mockMvc
-        .perform(
-            put("/api/v1/draws/" + drawId)
-                .header("Authorization", validJwtToken)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(updateDrawRequest))
+    executeDrawUpdate(validJwtToken, drawId, updateDrawRequest)
         .andExpect(status().isBadRequest())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$.error").exists())
@@ -289,12 +245,7 @@ public class DrawsUpdateContractTest {
 
     // When: PUT /api/v1/draws/{drawId} with maxParticipants too high
     // Then: Should return 400 Bad Request
-    mockMvc
-        .perform(
-            put("/api/v1/draws/" + drawId)
-                .header("Authorization", validJwtToken)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(updateDrawRequest))
+    executeDrawUpdate(validJwtToken, drawId, updateDrawRequest)
         .andExpect(status().isBadRequest())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$.error").exists())
@@ -315,12 +266,7 @@ public class DrawsUpdateContractTest {
 
     // When: PUT /api/v1/draws/{drawId} with invalid date format
     // Then: Should return 400 Bad Request
-    mockMvc
-        .perform(
-            put("/api/v1/draws/" + drawId)
-                .header("Authorization", validJwtToken)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(updateDrawRequest))
+    executeDrawUpdate(validJwtToken, drawId, updateDrawRequest)
         .andExpect(status().isBadRequest())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$.error").exists())
@@ -358,12 +304,7 @@ public class DrawsUpdateContractTest {
 
     // When: PUT /api/v1/draws/{drawId} with malformed JSON
     // Then: Should return 400 Bad Request
-    mockMvc
-        .perform(
-            put("/api/v1/draws/" + drawId)
-                .header("Authorization", validJwtToken)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(malformedJson))
+    executeDrawUpdate(validJwtToken, drawId, malformedJson)
         .andExpect(status().isBadRequest())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$.error").exists())
@@ -380,15 +321,19 @@ public class DrawsUpdateContractTest {
 
     // When: PUT /api/v1/draws/{drawId} with invalid UUID format
     // Then: Should return 400 Bad Request
-    mockMvc
-        .perform(
-            put("/api/v1/draws/" + invalidDrawId)
-                .header("Authorization", validJwtToken)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(updateDrawRequest))
+    executeDrawUpdate(validJwtToken, invalidDrawId, updateDrawRequest)
         .andExpect(status().isBadRequest())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$.error").exists())
         .andExpect(jsonPath("$.message").exists());
+  }
+
+  private ResultActions executeDrawUpdate(String validJwtToken, String drawId, String updateDrawRequest) throws Exception {
+    return mockMvc
+        .perform(
+            put("/api/v1/draws/" + drawId)
+                .header("Authorization", validJwtToken)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(updateDrawRequest));
   }
 }

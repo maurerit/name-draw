@@ -10,6 +10,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultActions;
 
 /**
  * Contract test for POST /draws/{drawId}/join endpoint
@@ -38,11 +39,7 @@ public class DrawsJoinContractTest {
 
     // When: POST /api/v1/draws/{drawId}/join
     // Then: Should return 200 with Participation JSON
-    mockMvc
-        .perform(
-            post("/api/v1/draws/{drawId}/join", drawId)
-                .header("Authorization", validJwtToken)
-                .contentType(MediaType.APPLICATION_JSON))
+    joinDrawWithToken(validJwtToken, drawId)
         .andExpect(status().isOk())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$.id").exists())
@@ -82,11 +79,7 @@ public class DrawsJoinContractTest {
 
     // When: POST /api/v1/draws/{drawId}/join with invalid token
     // Then: Should return 401 Unauthorized
-    mockMvc
-        .perform(
-            post("/api/v1/draws/{drawId}/join", drawId)
-                .header("Authorization", invalidJwtToken)
-                .contentType(MediaType.APPLICATION_JSON))
+    joinDrawWithToken(invalidJwtToken, drawId)
         .andExpect(status().isUnauthorized())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$.error").exists())
@@ -102,11 +95,7 @@ public class DrawsJoinContractTest {
 
     // When: POST /api/v1/draws/{drawId}/join with non-existent draw
     // Then: Should return 404 Not Found
-    mockMvc
-        .perform(
-            post("/api/v1/draws/{drawId}/join", nonExistentDrawId)
-                .header("Authorization", validJwtToken)
-                .contentType(MediaType.APPLICATION_JSON))
+    joinDrawWithToken(validJwtToken, nonExistentDrawId)
         .andExpect(status().isNotFound())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$.error").exists())
@@ -122,11 +111,7 @@ public class DrawsJoinContractTest {
 
     // When: POST /api/v1/draws/{drawId}/join when already joined
     // Then: Should return 400 Bad Request
-    mockMvc
-        .perform(
-            post("/api/v1/draws/{drawId}/join", drawId)
-                .header("Authorization", validJwtToken)
-                .contentType(MediaType.APPLICATION_JSON))
+    joinDrawWithToken(validJwtToken, drawId)
         .andExpect(status().isBadRequest())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$.error").exists())
@@ -142,11 +127,7 @@ public class DrawsJoinContractTest {
 
     // When: POST /api/v1/draws/{drawId}/join when draw is not in JOINING state
     // Then: Should return 400 Bad Request
-    mockMvc
-        .perform(
-            post("/api/v1/draws/{drawId}/join", drawId)
-                .header("Authorization", validJwtToken)
-                .contentType(MediaType.APPLICATION_JSON))
+    joinDrawWithToken(validJwtToken, drawId)
         .andExpect(status().isBadRequest())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$.error").exists())
@@ -162,11 +143,7 @@ public class DrawsJoinContractTest {
 
     // When: POST /api/v1/draws/{drawId}/join when draw is at max capacity
     // Then: Should return 400 Bad Request
-    mockMvc
-        .perform(
-            post("/api/v1/draws/{drawId}/join", drawId)
-                .header("Authorization", validJwtToken)
-                .contentType(MediaType.APPLICATION_JSON))
+    joinDrawWithToken(validJwtToken, drawId)
         .andExpect(status().isBadRequest())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$.error").exists())
@@ -182,11 +159,7 @@ public class DrawsJoinContractTest {
 
     // When: POST /api/v1/draws/{drawId}/join when user is the creator
     // Then: Should return 400 Bad Request
-    mockMvc
-        .perform(
-            post("/api/v1/draws/{drawId}/join", drawId)
-                .header("Authorization", validJwtToken)
-                .contentType(MediaType.APPLICATION_JSON))
+    joinDrawWithToken(validJwtToken, drawId)
         .andExpect(status().isBadRequest())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$.error").exists())
@@ -202,14 +175,18 @@ public class DrawsJoinContractTest {
 
     // When: POST /api/v1/draws/{drawId}/join with invalid UUID
     // Then: Should return 400 Bad Request
-    mockMvc
-        .perform(
-            post("/api/v1/draws/{drawId}/join", invalidDrawId)
-                .header("Authorization", validJwtToken)
-                .contentType(MediaType.APPLICATION_JSON))
+    joinDrawWithToken(validJwtToken, invalidDrawId)
         .andExpect(status().isBadRequest())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$.error").exists())
         .andExpect(jsonPath("$.message").exists());
+  }
+
+  private ResultActions joinDrawWithToken(String validJwtToken, String drawId) throws Exception {
+    return mockMvc
+        .perform(
+            post("/api/v1/draws/{drawId}/join", drawId)
+                .header("Authorization", validJwtToken)
+                .contentType(MediaType.APPLICATION_JSON));
   }
 }
