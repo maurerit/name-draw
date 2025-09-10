@@ -10,6 +10,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultActions;
 
 /**
  * Contract test for GET /users/me endpoint
@@ -36,11 +37,7 @@ public class UserProfileContractTest {
 
     // When: GET /api/v1/users/me
     // Then: Should return 200 with User JSON
-    mockMvc
-        .perform(
-            get("/api/v1/users/me")
-                .header("Authorization", validJwtToken)
-                .contentType(MediaType.APPLICATION_JSON))
+    retrieveUserProfile(validJwtToken)
         .andExpect(status().isOk())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$.id").exists())
@@ -71,11 +68,7 @@ public class UserProfileContractTest {
 
     // When: GET /api/v1/users/me with invalid token
     // Then: Should return 401 Unauthorized
-    mockMvc
-        .perform(
-            get("/api/v1/users/me")
-                .header("Authorization", invalidJwtToken)
-                .contentType(MediaType.APPLICATION_JSON))
+    retrieveUserProfile(invalidJwtToken)
         .andExpect(status().isUnauthorized())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$.error").exists())
@@ -89,11 +82,7 @@ public class UserProfileContractTest {
 
     // When: GET /api/v1/users/me with malformed header
     // Then: Should return 401 Unauthorized
-    mockMvc
-        .perform(
-            get("/api/v1/users/me")
-                .header("Authorization", malformedHeader)
-                .contentType(MediaType.APPLICATION_JSON))
+    retrieveUserProfile(malformedHeader)
         .andExpect(status().isUnauthorized())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$.error").exists())
@@ -108,11 +97,7 @@ public class UserProfileContractTest {
 
     // When: GET /api/v1/users/me with expired token
     // Then: Should return 401 Unauthorized
-    mockMvc
-        .perform(
-            get("/api/v1/users/me")
-                .header("Authorization", expiredJwtToken)
-                .contentType(MediaType.APPLICATION_JSON))
+    retrieveUserProfile(expiredJwtToken)
         .andExpect(status().isUnauthorized())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$.error").exists())
@@ -127,14 +112,18 @@ public class UserProfileContractTest {
 
     // When: GET /api/v1/users/me with deactivated user token
     // Then: Should return 401 Unauthorized (deactivated users cannot access API)
-    mockMvc
-        .perform(
-            get("/api/v1/users/me")
-                .header("Authorization", deactivatedUserToken)
-                .contentType(MediaType.APPLICATION_JSON))
+    retrieveUserProfile(deactivatedUserToken)
         .andExpect(status().isUnauthorized())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$.error").exists())
         .andExpect(jsonPath("$.message").exists());
+  }
+
+  private ResultActions retrieveUserProfile(String validJwtToken) throws Exception {
+    return mockMvc
+        .perform(
+            get("/api/v1/users/me")
+                .header("Authorization", validJwtToken)
+                .contentType(MediaType.APPLICATION_JSON));
   }
 }
