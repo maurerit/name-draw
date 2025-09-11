@@ -10,6 +10,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultActions;
 
 /**
  * Contract test for GET /draws/{drawId}/results endpoint
@@ -39,10 +40,7 @@ public class DrawingResultsContractTest {
 
     // When: GET /api/v1/draws/{drawId}/results
     // Then: Should return 200 with array of DrawResult JSON
-    mockMvc
-        .perform(
-            get("/api/v1/draws/{drawId}/results", drawIdWithResults)
-                .header("Authorization", validJwtToken))
+    retrieveDrawResults(validJwtToken, drawIdWithResults)
         .andExpect(status().isOk())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$").isArray())
@@ -69,10 +67,7 @@ public class DrawingResultsContractTest {
 
     // When: GET /api/v1/draws/{drawId}/results for draw with no results
     // Then: Should return 200 with empty array
-    mockMvc
-        .perform(
-            get("/api/v1/draws/{drawId}/results", drawIdNoResults)
-                .header("Authorization", validJwtToken))
+    retrieveDrawResults(validJwtToken, drawIdNoResults)
         .andExpect(status().isOk())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$").isArray())
@@ -89,10 +84,7 @@ public class DrawingResultsContractTest {
 
     // When: GET /api/v1/draws/{drawId}/results for archived draw (non-participant)
     // Then: Should return 200 with results (archived draws are public)
-    mockMvc
-        .perform(
-            get("/api/v1/draws/{drawId}/results", archivedDrawId)
-                .header("Authorization", validJwtToken))
+    retrieveDrawResults(validJwtToken, archivedDrawId)
         .andExpect(status().isOk())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$").isArray());
@@ -121,10 +113,7 @@ public class DrawingResultsContractTest {
 
     // When: GET /api/v1/draws/{drawId}/results with invalid token
     // Then: Should return 401 Unauthorized
-    mockMvc
-        .perform(
-            get("/api/v1/draws/{drawId}/results", validDrawId)
-                .header("Authorization", invalidJwtToken))
+    retrieveDrawResults(invalidJwtToken, validDrawId)
         .andExpect(status().isUnauthorized())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$.error").exists())
@@ -140,10 +129,7 @@ public class DrawingResultsContractTest {
 
     // When: GET /api/v1/draws/{drawId}/results for active draw as non-participant
     // Then: Should return 403 Forbidden
-    mockMvc
-        .perform(
-            get("/api/v1/draws/{drawId}/results", activeDrawId)
-                .header("Authorization", validJwtToken))
+    retrieveDrawResults(validJwtToken, activeDrawId)
         .andExpect(status().isForbidden())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$.error").exists())
@@ -159,10 +145,7 @@ public class DrawingResultsContractTest {
 
     // When: GET /api/v1/draws/{drawId}/results with non-existent ID
     // Then: Should return 404 Not Found
-    mockMvc
-        .perform(
-            get("/api/v1/draws/{drawId}/results", nonExistentDrawId)
-                .header("Authorization", validJwtToken))
+    retrieveDrawResults(validJwtToken, nonExistentDrawId)
         .andExpect(status().isNotFound())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$.error").exists())
@@ -178,10 +161,7 @@ public class DrawingResultsContractTest {
 
     // When: GET /api/v1/draws/{drawId}/results with invalid UUID format
     // Then: Should return 400 Bad Request
-    mockMvc
-        .perform(
-            get("/api/v1/draws/{drawId}/results", invalidUuid)
-                .header("Authorization", validJwtToken))
+    retrieveDrawResults(validJwtToken, invalidUuid)
         .andExpect(status().isBadRequest())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$.error").exists())
@@ -197,10 +177,7 @@ public class DrawingResultsContractTest {
 
     // When: GET /api/v1/draws/{drawId}/results for draw with multiple results
     // Then: Should return 200 with array containing multiple DrawResult objects
-    mockMvc
-        .perform(
-            get("/api/v1/draws/{drawId}/results", drawIdMultipleResults)
-                .header("Authorization", validJwtToken))
+    retrieveDrawResults(validJwtToken, drawIdMultipleResults)
         .andExpect(status().isOk())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$").isArray())
@@ -223,10 +200,7 @@ public class DrawingResultsContractTest {
 
     // When: GET /api/v1/draws/{drawId}/results
     // Then: Should return complete user profile in drawnUser
-    mockMvc
-        .perform(
-            get("/api/v1/draws/{drawId}/results", drawIdWithUserProfile)
-                .header("Authorization", validJwtToken))
+    retrieveDrawResults(validJwtToken, drawIdWithUserProfile)
         .andExpect(status().isOk())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$").isArray())
@@ -235,5 +209,12 @@ public class DrawingResultsContractTest {
         .andExpect(jsonPath("$[0].drawnUser.isActive").isBoolean())
         // profilePictureUrl is optional/nullable
         .andExpect(jsonPath("$[0].drawnUser").exists());
+  }
+
+  private ResultActions retrieveDrawResults(String validJwtToken, String drawIdWithResults) throws Exception {
+    return mockMvc
+        .perform(
+            get("/api/v1/draws/{drawId}/results", drawIdWithResults)
+                .header("Authorization", validJwtToken));
   }
 }

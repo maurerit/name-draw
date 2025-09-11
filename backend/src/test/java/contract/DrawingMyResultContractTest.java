@@ -10,6 +10,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultActions;
 
 /**
  * Contract test for GET /draws/{drawId}/my-result endpoint
@@ -39,10 +40,7 @@ public class DrawingMyResultContractTest {
 
     // When: GET /api/v1/draws/{drawId}/my-result
     // Then: Should return 200 with DrawResult JSON
-    mockMvc
-        .perform(
-            get("/api/v1/draws/{drawId}/my-result", drawIdWithResult)
-                .header("Authorization", validJwtToken))
+    executeDrawResultFetch(validJwtToken, drawIdWithResult)
         .andExpect(status().isOk())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$.drawId").exists())
@@ -81,10 +79,7 @@ public class DrawingMyResultContractTest {
 
     // When: GET /api/v1/draws/{drawId}/my-result with invalid token
     // Then: Should return 401 Unauthorized
-    mockMvc
-        .perform(
-            get("/api/v1/draws/{drawId}/my-result", validDrawId)
-                .header("Authorization", invalidJwtToken))
+    executeDrawResultFetch(invalidJwtToken, validDrawId)
         .andExpect(status().isUnauthorized())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$.error").exists())
@@ -100,9 +95,7 @@ public class DrawingMyResultContractTest {
 
     // When: GET /api/v1/draws/{drawId}/my-result as non-participant
     // Then: Should return 403 Forbidden
-    mockMvc
-        .perform(
-            get("/api/v1/draws/{drawId}/my-result", drawId).header("Authorization", validJwtToken))
+    executeDrawResultFetch(validJwtToken, drawId)
         .andExpect(status().isForbidden())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$.error").exists())
@@ -118,10 +111,7 @@ public class DrawingMyResultContractTest {
 
     // When: GET /api/v1/draws/{drawId}/my-result with non-existent ID
     // Then: Should return 404 Not Found
-    mockMvc
-        .perform(
-            get("/api/v1/draws/{drawId}/my-result", nonExistentDrawId)
-                .header("Authorization", validJwtToken))
+    executeDrawResultFetch(validJwtToken, nonExistentDrawId)
         .andExpect(status().isNotFound())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$.error").exists())
@@ -137,10 +127,7 @@ public class DrawingMyResultContractTest {
 
     // When: GET /api/v1/draws/{drawId}/my-result for participant who hasn't drawn
     // Then: Should return 404 Not Found
-    mockMvc
-        .perform(
-            get("/api/v1/draws/{drawId}/my-result", drawIdNoResult)
-                .header("Authorization", validJwtToken))
+    executeDrawResultFetch(validJwtToken, drawIdNoResult)
         .andExpect(status().isNotFound())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$.error").exists())
@@ -156,10 +143,7 @@ public class DrawingMyResultContractTest {
 
     // When: GET /api/v1/draws/{drawId}/my-result with invalid UUID format
     // Then: Should return 400 Bad Request
-    mockMvc
-        .perform(
-            get("/api/v1/draws/{drawId}/my-result", invalidUuid)
-                .header("Authorization", validJwtToken))
+    executeDrawResultFetch(validJwtToken, invalidUuid)
         .andExpect(status().isBadRequest())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$.error").exists())
@@ -176,10 +160,7 @@ public class DrawingMyResultContractTest {
 
     // When: GET /api/v1/draws/{drawId}/my-result
     // Then: Should return complete user profile in drawnUser
-    mockMvc
-        .perform(
-            get("/api/v1/draws/{drawId}/my-result", drawIdWithUserProfile)
-                .header("Authorization", validJwtToken))
+    executeDrawResultFetch(validJwtToken, drawIdWithUserProfile)
         .andExpect(status().isOk())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$.drawId").value(drawIdWithUserProfile))
@@ -189,5 +170,12 @@ public class DrawingMyResultContractTest {
         // profilePictureUrl is optional/nullable
         .andExpect(jsonPath("$.drawnUser").exists())
         .andExpect(jsonPath("$.drawnAt").isString());
+  }
+
+  private ResultActions executeDrawResultFetch(String validJwtToken, String drawIdWithResult) throws Exception {
+    return mockMvc
+        .perform(
+            get("/api/v1/draws/{drawId}/my-result", drawIdWithResult)
+                .header("Authorization", validJwtToken));
   }
 }
