@@ -123,9 +123,8 @@ class AuthLoginContractTest {
   }
 
   private ResultActions sendLoginRequest(String invalidProvider) throws Exception {
-    return mockMvc
-        .perform(
-            get("/api/v1/auth/login/{provider}", invalidProvider)
-                .contentType(MediaType.APPLICATION_JSON));
+    return mockMvc.perform(
+        get("/api/v1/auth/login/{provider}", invalidProvider)
+            .contentType(MediaType.APPLICATION_JSON));
   }
 }

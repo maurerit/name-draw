@@ -188,11 +188,11 @@ class AuthRefreshContractTest {
         .andExpect(jsonPath("$.path").value("/api/v1/auth/refresh"));
   }
 
-  private ResultActions sendRefreshTokenRequest(Map<String, String> refreshRequest) throws Exception, JsonProcessingException {
-    return mockMvc
-        .perform(
-            post("/api/v1/auth/refresh")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(refreshRequest)));
+  private ResultActions sendRefreshTokenRequest(Map<String, String> refreshRequest)
+      throws Exception, JsonProcessingException {
+    return mockMvc.perform(
+        post("/api/v1/auth/refresh")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(refreshRequest)));
   }
 }

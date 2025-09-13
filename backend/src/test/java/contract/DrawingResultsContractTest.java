@@ -211,10 +211,10 @@ public class DrawingResultsContractTest {
         .andExpect(jsonPath("$[0].drawnUser").exists());
   }
 
-  private ResultActions retrieveDrawResults(String validJwtToken, String drawIdWithResults) throws Exception {
-    return mockMvc
-        .perform(
-            get("/api/v1/draws/{drawId}/results", drawIdWithResults)
-                .header("Authorization", validJwtToken));
+  private ResultActions retrieveDrawResults(String validJwtToken, String drawIdWithResults)
+      throws Exception {
+    return mockMvc.perform(
+        get("/api/v1/draws/{drawId}/results", drawIdWithResults)
+            .header("Authorization", validJwtToken));
   }
 }

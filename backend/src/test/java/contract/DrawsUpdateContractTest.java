@@ -328,12 +328,12 @@ public class DrawsUpdateContractTest {
         .andExpect(jsonPath("$.message").exists());
   }
 
-  private ResultActions executeDrawUpdate(String validJwtToken, String drawId, String updateDrawRequest) throws Exception {
-    return mockMvc
-        .perform(
-            put("/api/v1/draws/" + drawId)
-                .header("Authorization", validJwtToken)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(updateDrawRequest));
+  private ResultActions executeDrawUpdate(
+      String validJwtToken, String drawId, String updateDrawRequest) throws Exception {
+    return mockMvc.perform(
+        put("/api/v1/draws/" + drawId)
+            .header("Authorization", validJwtToken)
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(updateDrawRequest));
   }
 }

@@ -239,9 +239,9 @@ public class DrawsGetContractTest {
         .andExpect(jsonPath("$.description").isEmpty()); // Can be null/empty
   }
 
-  private ResultActions sendDrawRequest(String validJwtToken, String joiningDrawId) throws Exception {
-    return mockMvc
-        .perform(
-            get("/api/v1/draws/{drawId}", joiningDrawId).header("Authorization", validJwtToken));
+  private ResultActions sendDrawRequest(String validJwtToken, String joiningDrawId)
+      throws Exception {
+    return mockMvc.perform(
+        get("/api/v1/draws/{drawId}", joiningDrawId).header("Authorization", validJwtToken));
   }
 }
