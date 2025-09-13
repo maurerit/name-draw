@@ -100,7 +100,7 @@
 - [x] T036 UserService business logic in `backend/src/main/java/com/namedraw/service/UserService.java`
 - [x] T037 DrawService business logic (depends on UserService) in `backend/src/main/java/com/namedraw/service/DrawService.java`
 - [x] T038 DrawingService with queue management (depends on DrawService) in `backend/src/main/java/com/namedraw/service/DrawingService.java`
-- [ ] T039 AuthService OAuth integration (depends on UserService) in `backend/src/main/java/com/namedraw/service/AuthService.java`
+- [x] T039 AuthService OAuth integration (depends on UserService) in `backend/src/main/java/com/namedraw/service/AuthService.java`
 
 ## Phase 3.7: Controller Layer
 - [ ] T040 AuthController OAuth endpoints in `backend/src/main/java/controller/AuthController.java`
