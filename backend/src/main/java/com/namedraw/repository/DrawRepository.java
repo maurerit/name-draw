@@ -42,8 +42,8 @@ public interface DrawRepository extends JpaRepository<Draw, UUID> {
   /**
    * Finds all draws created by a specific user with a specific state.
    *
-   * <p>Useful for filtering user's draws by lifecycle state, such as showing only active draws
-   * that can still accept participants or only archived draws for historical viewing.
+   * <p>Useful for filtering user's draws by lifecycle state, such as showing only active draws that
+   * can still accept participants or only archived draws for historical viewing.
    *
    * @param creator the user who created the draws
    * @param state the current state of the draws
@@ -85,7 +85,13 @@ public interface DrawRepository extends JpaRepository<Draw, UUID> {
    * @return List of draws with insufficient participants that should be archived
    */
   @Query(
-      "SELECT d FROM Draw d WHERE d.drawDate <= :currentDate AND d.participantCount <= 1 AND d.state = 'JOINING'")
+      """
+    SELECT d
+      FROM Draw d
+     WHERE d.drawDate <= :currentDate
+       AND d.participantCount <= 1
+       AND d.state = 'JOINING'
+      """)
   List<Draw> findDrawsToAutoArchive(@Param("currentDate") LocalDate currentDate);
 
   /**
@@ -96,7 +102,13 @@ public interface DrawRepository extends JpaRepository<Draw, UUID> {
    *
    * @return List of draws at capacity that should be auto-opened
    */
-  @Query("SELECT d FROM Draw d WHERE d.participantCount >= d.maxParticipants AND d.state = 'JOINING'")
+  @Query(
+      """
+    SELECT d
+      FROM Draw d
+     WHERE d.participantCount >= d.maxParticipants
+       AND d.state = 'JOINING'
+      """)
   List<Draw> findDrawsToAutoOpen();
 
   /**
@@ -107,7 +119,14 @@ public interface DrawRepository extends JpaRepository<Draw, UUID> {
    *
    * @return List of draws that can accept new participants, ordered by creation date descending
    */
-  @Query("SELECT d FROM Draw d WHERE d.state = 'JOINING' AND d.participantCount < d.maxParticipants ORDER BY d.createdAt DESC")
+  @Query(
+      """
+    SELECT d
+      FROM Draw d
+     WHERE d.state = 'JOINING'
+       AND d.participantCount < d.maxParticipants
+     ORDER BY d.createdAt DESC
+      """)
   List<Draw> findJoinableDraws();
 
   /**
@@ -120,10 +139,17 @@ public interface DrawRepository extends JpaRepository<Draw, UUID> {
    * @return List of joinable draws excluding those the user created or already joined
    */
   @Query(
-      "SELECT d FROM Draw d WHERE d.state = 'JOINING' AND d.participantCount < d.maxParticipants "
-          + "AND d.creator.id != :userId AND d.id NOT IN "
-          + "(SELECT p.draw.id FROM Participation p WHERE p.user.id = :userId) "
-          + "ORDER BY d.createdAt DESC")
+      """
+    SELECT d
+      FROM Draw d
+     WHERE d.state = 'JOINING'
+       AND d.participantCount < d.maxParticipants
+       AND d.creator.id != :userId
+       AND d.id NOT IN (SELECT p.draw.id
+                          FROM Participation p
+                         WHERE p.user.id = :userId)
+     ORDER BY d.createdAt DESC
+       """)
   List<Draw> findJoinableDrawsForUser(@Param("userId") UUID userId);
 
   /**
@@ -209,8 +235,8 @@ public interface DrawRepository extends JpaRepository<Draw, UUID> {
   /**
    * Bulk update draw states.
    *
-   * <p>Efficient bulk operation for background processing tasks such as automated archival or
-   * state transitions. Avoids loading entities for better performance.
+   * <p>Efficient bulk operation for background processing tasks such as automated archival or state
+   * transitions. Avoids loading entities for better performance.
    *
    * @param drawIds the UUIDs of draws to update
    * @param newState the new state to set
@@ -218,7 +244,12 @@ public interface DrawRepository extends JpaRepository<Draw, UUID> {
    * @return the number of draws updated
    */
   @Modifying
-  @Query("UPDATE Draw d SET d.state = :newState, d.archivedAt = :timestamp WHERE d.id IN :drawIds AND d.state != 'ARCHIVED'")
+  @Query(
+      """
+    UPDATE Draw d SET d.state = :newState, d.archivedAt = :timestamp
+     WHERE d.id IN :drawIds
+       AND d.state != 'ARCHIVED'
+      """)
   int bulkUpdateToArchived(
       @Param("drawIds") List<UUID> drawIds,
       @Param("newState") DrawState newState,
@@ -234,7 +265,12 @@ public interface DrawRepository extends JpaRepository<Draw, UUID> {
    * @return the number of draws updated
    */
   @Modifying
-  @Query("UPDATE Draw d SET d.state = 'OPEN', d.openedAt = :timestamp WHERE d.id IN :drawIds AND d.state = 'JOINING'")
+  @Query(
+      """
+    UPDATE Draw d SET d.state = 'OPEN', d.openedAt = :timestamp
+     WHERE d.id IN :drawIds
+       AND d.state = 'JOINING'
+      """)
   int bulkUpdateToOpen(
       @Param("drawIds") List<UUID> drawIds, @Param("timestamp") LocalDateTime timestamp);
 
@@ -262,6 +298,12 @@ public interface DrawRepository extends JpaRepository<Draw, UUID> {
    * @return List of draws that may need participant count updates
    */
   @Query(
-      "SELECT d FROM Draw d WHERE d.participantCount != (SELECT COUNT(p) FROM Participation p WHERE p.draw = d)")
+      """
+    SELECT d
+      FROM Draw d
+     WHERE d.participantCount != (SELECT COUNT(p)
+                                    FROM Participation p
+                                   WHERE p.draw = d)
+      """)
   List<Draw> findDrawsWithIncorrectParticipantCount();
 }

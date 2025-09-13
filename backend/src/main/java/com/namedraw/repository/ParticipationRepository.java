@@ -29,8 +29,8 @@ public interface ParticipationRepository extends JpaRepository<Participation, UU
   /**
    * Finds all participations for a specific user.
    *
-   * <p>This method is essential for user dashboard functionality where users need to view all
-   * draws they have joined. Results are ordered by join date descending to show most recent
+   * <p>This method is essential for user dashboard functionality where users need to view all draws
+   * they have joined. Results are ordered by join date descending to show most recent
    * participations first.
    *
    * @param user the user whose participations to find
@@ -42,8 +42,8 @@ public interface ParticipationRepository extends JpaRepository<Participation, UU
    * Finds all participations for a specific draw.
    *
    * <p>This method is essential for draw management functionality where creators and administrators
-   * need to view all participants in a draw. Results are ordered by join date ascending to show
-   * the order in which users joined.
+   * need to view all participants in a draw. Results are ordered by join date ascending to show the
+   * order in which users joined.
    *
    * @param draw the draw whose participants to find
    * @return List of participations for the specified draw, ordered by join date ascending
@@ -135,7 +135,14 @@ public interface ParticipationRepository extends JpaRepository<Participation, UU
    * @param draw the draw whose active participants to find
    * @return List of participations for active users in the specified draw
    */
-  @Query("SELECT p FROM Participation p WHERE p.draw = :draw AND p.user.isActive = true ORDER BY p.joinedAt ASC")
+  @Query(
+      """
+    SELECT p
+      FROM Participation p
+     WHERE p.draw = :draw
+       AND p.user.isActive = true
+     ORDER BY p.joinedAt ASC
+      """)
   List<Participation> findActiveParticipationsByDraw(@Param("draw") Draw draw);
 
   /**
@@ -148,15 +155,21 @@ public interface ParticipationRepository extends JpaRepository<Participation, UU
    * @param draw the draw to count active participants for
    * @return the number of active participants in the draw
    */
-  @Query("SELECT COUNT(p) FROM Participation p WHERE p.draw = :draw AND p.user.isActive = true")
+  @Query(
+      """
+    SELECT COUNT(p)
+      FROM Participation p
+     WHERE p.draw = :draw
+       AND p.user.isActive = true
+      """)
   long countActiveParticipationsByDraw(@Param("draw") Draw draw);
 
   /**
    * Removes all participations for deactivated users from a specific draw.
    *
    * <p>This method is used during draw state transitions to clean up participations from users
-   * whose accounts have been deactivated. This ensures only active users can participate in
-   * drawing operations.
+   * whose accounts have been deactivated. This ensures only active users can participate in drawing
+   * operations.
    *
    * @param draw the draw to clean up participations for
    * @return the number of participations removed
@@ -175,8 +188,16 @@ public interface ParticipationRepository extends JpaRepository<Participation, UU
    * @param drawState the state of draws to filter by
    * @return List of participations for the user in draws with the specified state
    */
-  @Query("SELECT p FROM Participation p WHERE p.user = :user AND p.draw.state = :drawState ORDER BY p.joinedAt DESC")
-  List<Participation> findByUserAndDrawState(@Param("user") User user, @Param("drawState") Draw.DrawState drawState);
+  @Query(
+      """
+    SELECT p
+      FROM Participation p
+     WHERE p.user = :user
+       AND p.draw.state = :drawState
+     ORDER BY p.joinedAt DESC
+      """)
+  List<Participation> findByUserAndDrawState(
+      @Param("user") User user, @Param("drawState") Draw.DrawState drawState);
 
   /**
    * Finds all participations for draws with a specific state created by a specific user.
@@ -189,6 +210,14 @@ public interface ParticipationRepository extends JpaRepository<Participation, UU
    * @param drawState the state of draws to filter by
    * @return List of participations in draws created by the user with the specified state
    */
-  @Query("SELECT p FROM Participation p WHERE p.draw.creator = :creator AND p.draw.state = :drawState ORDER BY p.joinedAt DESC")
-  List<Participation> findByDrawCreatorAndDrawState(@Param("creator") User creator, @Param("drawState") Draw.DrawState drawState);
+  @Query(
+      """
+    SELECT p
+      FROM Participation p
+     WHERE p.draw.creator = :creator
+       AND p.draw.state = :drawState
+     ORDER BY p.joinedAt DESC
+      """)
+  List<Participation> findByDrawCreatorAndDrawState(
+      @Param("creator") User creator, @Param("drawState") Draw.DrawState drawState);
 }

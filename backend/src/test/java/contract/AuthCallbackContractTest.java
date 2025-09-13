@@ -28,7 +28,7 @@ import org.springframework.test.web.servlet.ResultActions;
  * authentication (AuthResponse schema) - 400: Invalid request (ErrorResponse schema) - 401:
  * Authentication failed (ErrorResponse schema)
  */
-@SpringBootTest
+@SpringBootTest(classes = com.namedraw.NameDrawApplication.class)
 @AutoConfigureWebMvc
 @ActiveProfiles("test")
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)

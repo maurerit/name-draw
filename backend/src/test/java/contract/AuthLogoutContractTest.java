@@ -24,7 +24,7 @@ import org.springframework.test.web.servlet.ResultActions;
  * <p>OpenAPI Contract: - Path: POST /auth/logout - Security: BearerAuth (JWT token required) -
  * Responses: - 200: Successfully logged out - 401: Unauthorized (ErrorResponse schema)
  */
-@SpringBootTest
+@SpringBootTest(classes = com.namedraw.NameDrawApplication.class)
 @AutoConfigureWebMvc
 @ActiveProfiles("test")
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)

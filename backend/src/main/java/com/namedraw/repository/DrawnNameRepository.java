@@ -98,8 +98,8 @@ public interface DrawnNameRepository extends JpaRepository<DrawnName, UUID> {
   /**
    * Finds all instances where a specific user's name was drawn across all draws.
    *
-   * <p>This method shows where a user's name has been selected by others. Useful for analytics
-   * and "who drew me" type queries.
+   * <p>This method shows where a user's name has been selected by others. Useful for analytics and
+   * "who drew me" type queries.
    *
    * @param drawnUser the user whose name selections to find
    * @return List of all times this user's name was drawn, ordered by most recent first
@@ -115,8 +115,7 @@ public interface DrawnNameRepository extends JpaRepository<DrawnName, UUID> {
    * @param creator the user who created the draws
    * @return List of all draw results from draws created by the specified user
    */
-  @Query(
-      "SELECT dn FROM DrawnName dn WHERE dn.draw.creator = :creator ORDER BY dn.drawnAt DESC")
+  @Query("SELECT dn FROM DrawnName dn WHERE dn.draw.creator = :creator ORDER BY dn.drawnAt DESC")
   List<DrawnName> findByDrawCreator(@Param("creator") User creator);
 
   /**
@@ -157,9 +156,15 @@ public interface DrawnNameRepository extends JpaRepository<DrawnName, UUID> {
    * @return List of users who have joined but not yet drawn from the specified draw
    */
   @Query(
-      "SELECT p.user FROM Participation p "
-          + "WHERE p.draw = :draw "
-          + "AND NOT EXISTS (SELECT 1 FROM DrawnName dn WHERE dn.draw = :draw AND dn.drawerUser = p.user)")
+      """
+    SELECT p.user
+      FROM Participation p
+     WHERE p.draw = :draw
+       AND NOT EXISTS (SELECT 1
+                         FROM DrawnName dn
+                        WHERE dn.draw = :draw
+                          AND dn.drawerUser = p.user)
+      """)
   List<User> findUsersWhoHaveNotDrawn(@Param("draw") Draw draw);
 
   /**
@@ -173,8 +178,14 @@ public interface DrawnNameRepository extends JpaRepository<DrawnName, UUID> {
    * @return List of users whose names are still available to be drawn
    */
   @Query(
-      "SELECT p.user FROM Participation p "
-          + "WHERE p.draw = :draw "
-          + "AND NOT EXISTS (SELECT 1 FROM DrawnName dn WHERE dn.draw = :draw AND dn.drawnUser = p.user)")
+      """
+    SELECT p.user
+      FROM Participation p
+     WHERE p.draw = :draw
+       AND NOT EXISTS (SELECT 1
+                         FROM DrawnName dn
+                        WHERE dn.draw = :draw
+                          AND dn.drawnUser = p.user)
+      """)
   List<User> findAvailableUsersToDraw(@Param("draw") Draw draw);
 }

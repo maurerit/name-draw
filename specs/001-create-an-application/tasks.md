@@ -97,10 +97,10 @@
 - [x] T035a [P] DrawQueueRepository JPA interface in `backend/src/main/java/repository/DrawQueueRepository.java` for atomic insert/delete operations
 
 ## Phase 3.6: Service Layer
-- [ ] T036 UserService business logic in `backend/src/main/java/service/UserService.java`
-- [ ] T037 DrawService business logic (depends on UserService) in `backend/src/main/java/service/DrawService.java`
-- [ ] T038 DrawingService with queue management (depends on DrawService) in `backend/src/main/java/service/DrawingService.java`
-- [ ] T039 AuthService OAuth integration (depends on UserService) in `backend/src/main/java/service/AuthService.java`
+- [x] T036 UserService business logic in `backend/src/main/java/com/namedraw/service/UserService.java`
+- [x] T037 DrawService business logic (depends on UserService) in `backend/src/main/java/com/namedraw/service/DrawService.java`
+- [x] T038 DrawingService with queue management (depends on DrawService) in `backend/src/main/java/com/namedraw/service/DrawingService.java`
+- [x] T039 AuthService OAuth integration (depends on UserService) in `backend/src/main/java/com/namedraw/service/AuthService.java`
 
 ## Phase 3.7: Controller Layer
 - [ ] T040 AuthController OAuth endpoints in `backend/src/main/java/controller/AuthController.java`
