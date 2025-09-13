@@ -98,7 +98,7 @@
 
 ## Phase 3.6: Service Layer
 - [x] T036 UserService business logic in `backend/src/main/java/service/UserService.java`
-- [ ] T037 DrawService business logic (depends on UserService) in `backend/src/main/java/service/DrawService.java`
+- [x] T037 DrawService business logic (depends on UserService) in `backend/src/main/java/service/DrawService.java`
 - [ ] T038 DrawingService with queue management (depends on DrawService) in `backend/src/main/java/service/DrawingService.java`
 - [ ] T039 AuthService OAuth integration (depends on UserService) in `backend/src/main/java/service/AuthService.java`
 
