@@ -23,14 +23,12 @@ import org.springframework.stereotype.Service;
 /**
  * Service for JWT token management including generation, validation, refresh, and invalidation.
  *
- * <p>This service handles all JWT-related operations for the Name Draw application, including:
- * - Access token generation and validation
- * - Refresh token management 
- * - Token invalidation (logout)
- * - Claims extraction and user identification
+ * <p>This service handles all JWT-related operations for the Name Draw application, including: -
+ * Access token generation and validation - Refresh token management - Token invalidation (logout) -
+ * Claims extraction and user identification
  *
- * <p>Tokens are signed using HMAC-SHA256 with a configurable secret key. The service maintains
- * a blacklist of invalidated tokens to support logout functionality.
+ * <p>Tokens are signed using HMAC-SHA256 with a configurable secret key. The service maintains a
+ * blacklist of invalidated tokens to support logout functionality.
  */
 @Service
 @Slf4j
@@ -39,10 +37,16 @@ public class JwtTokenService {
   private final long jwtExpirationMs;
   private final long refreshExpirationMs;
   private final SecretKey signingKey;
-  
+
   // In-memory token blacklist (in production, use Redis or similar)
   private final Set<String> blacklistedTokens = ConcurrentHashMap.newKeySet();
 
+  /**
+   * Constructor to initialize JwtTokenService with configuration properties.
+   *
+   * @param jwtSecret the secret key for signing tokens
+   * @param jwtExpirationMs the expiration time for JWT tokens in milliseconds
+   */
   public JwtTokenService(
       @Value("${jwt.secret}") String jwtSecret,
       @Value("${jwt.expiration:86400000}") long jwtExpirationMs) {
@@ -84,10 +88,7 @@ public class JwtTokenService {
     }
 
     try {
-      Jwts.parser()
-          .verifyWith(signingKey)
-          .build()
-          .parseSignedClaims(token);
+      Jwts.parser().verifyWith(signingKey).build().parseSignedClaims(token);
       return true;
     } catch (MalformedJwtException e) {
       log.error("Invalid JWT token: {}", e.getMessage());
@@ -109,12 +110,9 @@ public class JwtTokenService {
    * @throws IllegalArgumentException if the token is invalid
    */
   public UUID getUserIdFromToken(String token) {
-    Claims claims = Jwts.parser()
-        .verifyWith(signingKey)
-        .build()
-        .parseSignedClaims(token)
-        .getPayload();
-    
+    Claims claims =
+        Jwts.parser().verifyWith(signingKey).build().parseSignedClaims(token).getPayload();
+
     String userId = claims.getSubject();
     return UUID.fromString(userId);
   }
@@ -126,12 +124,9 @@ public class JwtTokenService {
    * @return the token type ("access" or "refresh")
    */
   public String getTokenType(String token) {
-    Claims claims = Jwts.parser()
-        .verifyWith(signingKey)
-        .build()
-        .parseSignedClaims(token)
-        .getPayload();
-    
+    Claims claims =
+        Jwts.parser().verifyWith(signingKey).build().parseSignedClaims(token).getPayload();
+
     return claims.get("type", String.class);
   }
 
@@ -177,7 +172,7 @@ public class JwtTokenService {
 
   private String generateToken(User user, long expirationMs, String tokenType) {
     Instant now = Instant.now();
-    Instant expiration = now.plusMillis(expirationMs);
+    final Instant expiration = now.plusMillis(expirationMs);
 
     Map<String, Object> claims = new HashMap<>();
     claims.put("type", tokenType);

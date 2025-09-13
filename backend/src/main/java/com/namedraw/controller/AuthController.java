@@ -10,9 +10,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -20,15 +20,13 @@ import org.springframework.web.bind.annotation.RestController;
 /**
  * REST controller for authentication operations including OAuth flows.
  *
- * <p>This controller handles OAuth authentication flows for Facebook and Google providers,
- * JWT token management, and user session management. It delegates business logic to
- * AuthService and returns appropriate HTTP responses according to the OpenAPI specification.
+ * <p>This controller handles OAuth authentication flows for Facebook and Google providers, JWT
+ * token management, and user session management. It delegates business logic to AuthService and
+ * returns appropriate HTTP responses according to the OpenAPI specification.
  *
- * <p>Endpoints:
- * - GET /auth/login/{provider}: Initiate OAuth login
- * - POST /auth/callback/{provider}: Handle OAuth callback
- * - POST /auth/refresh: Refresh JWT token
- * - POST /auth/logout: Logout and invalidate token
+ * <p>Endpoints: - GET /auth/login/{provider}: Initiate OAuth login - POST
+ * /auth/callback/{provider}: Handle OAuth callback - POST /auth/refresh: Refresh JWT token - POST
+ * /auth/logout: Logout and invalidate token
  */
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -48,13 +46,11 @@ public class AuthController {
   @GetMapping("/login/{provider}")
   public ResponseEntity<Void> login(@PathVariable String provider, HttpServletRequest request) {
     log.info("Initiating OAuth login for provider: {}", provider);
-    
+
     try {
       String baseUrl = getBaseUrl(request);
       String authorizationUrl = authService.generateLoginUrl(provider, baseUrl);
-      return ResponseEntity.status(HttpStatus.FOUND)
-          .header("Location", authorizationUrl)
-          .build();
+      return ResponseEntity.status(HttpStatus.FOUND).header("Location", authorizationUrl).build();
     } catch (IllegalArgumentException e) {
       log.warn("Invalid OAuth provider requested: {}", provider);
       throw new IllegalArgumentException("Invalid provider: " + provider);
@@ -75,18 +71,19 @@ public class AuthController {
       @RequestBody Map<String, String> callbackRequest,
       HttpServletRequest request) {
     log.info("Processing OAuth callback for provider: {}", provider);
-    
+
     String code = callbackRequest.get("code");
     String state = callbackRequest.get("state");
-    
+
     if (code == null || state == null) {
       log.warn("Missing required parameters in OAuth callback");
       return ResponseEntity.badRequest().build();
     }
-    
+
     try {
       String baseUrl = getBaseUrl(request);
-      AuthService.AuthResponse authResponse = authService.processCallback(provider, code, state, baseUrl);
+      AuthService.AuthResponse authResponse =
+          authService.processCallback(provider, code, state, baseUrl);
       Map<String, Object> response = convertAuthResponse(authResponse);
       return ResponseEntity.ok(response);
     } catch (IllegalArgumentException e) {
@@ -105,23 +102,24 @@ public class AuthController {
    * @return New authentication response with refreshed tokens
    */
   @PostMapping("/refresh")
-  public ResponseEntity<Map<String, Object>> refresh(@RequestBody Map<String, String> refreshRequest) {
+  public ResponseEntity<Map<String, Object>> refresh(
+      @RequestBody Map<String, String> refreshRequest) {
     log.info("Processing token refresh request");
-    
+
     String refreshToken = refreshRequest.get("refreshToken");
-    
-    if (refreshToken == null) {
-      log.warn("Missing refresh token in refresh request");
-      return ResponseEntity.badRequest().build();
+
+    if (refreshToken == null || refreshToken.trim().isEmpty()) {
+      log.warn("Missing or empty refresh token in refresh request");
+      throw new IllegalArgumentException("Refresh token is required");
     }
-    
+
     try {
       AuthService.AuthResponse authResponse = authService.refreshToken(refreshToken);
       Map<String, Object> response = convertAuthResponse(authResponse);
       return ResponseEntity.ok(response);
     } catch (Exception e) {
       log.error("Token refresh failed", e);
-      return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+      throw e; // Let GlobalExceptionHandler handle it
     }
   }
 
@@ -134,7 +132,7 @@ public class AuthController {
   @PostMapping("/logout")
   public ResponseEntity<Void> logout(@AuthenticationPrincipal Jwt jwt) {
     log.info("Processing logout request for user: {}", jwt.getSubject());
-    
+
     try {
       String token = jwt.getTokenValue();
       authService.logout(token);
@@ -156,15 +154,15 @@ public class AuthController {
     String serverName = request.getServerName();
     int serverPort = request.getServerPort();
     String contextPath = request.getContextPath();
-    
+
     StringBuilder baseUrl = new StringBuilder();
     baseUrl.append(scheme).append("://").append(serverName);
-    
-    if (("http".equals(scheme) && serverPort != 80) ||
-        ("https".equals(scheme) && serverPort != 443)) {
+
+    if (("http".equals(scheme) && serverPort != 80)
+        || ("https".equals(scheme) && serverPort != 443)) {
       baseUrl.append(":").append(serverPort);
     }
-    
+
     baseUrl.append(contextPath);
     return baseUrl.toString();
   }
