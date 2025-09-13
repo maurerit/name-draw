@@ -5,7 +5,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureWebMvc;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
@@ -23,8 +23,8 @@ import org.springframework.test.web.servlet.ResultActions;
  * join (wrong state, already joined, etc.) - Returns 401 if unauthorized - Returns 404 if draw not
  * found - Participation schema: {id: uuid, draw: Draw, joinedAt: datetime}
  */
-@SpringBootTest(classes = com.namedraw.NameDrawApplication.class)
-@AutoConfigureWebMvc
+@SpringBootTest(classes = {com.namedraw.NameDrawApplication.class, ContractTestConfig.class})
+@AutoConfigureMockMvc
 @ActiveProfiles("test")
 public class DrawsJoinContractTest {
 

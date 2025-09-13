@@ -5,7 +5,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureWebMvc;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
@@ -24,8 +24,8 @@ import org.springframework.test.web.servlet.ResultActions;
  * forbidden (not creator) - Returns 404 if draw not found - Draw schema: {id: uuid, title: string,
  * state: string, participantCount: number, canJoin: boolean, canDraw: boolean}
  */
-@SpringBootTest(classes = com.namedraw.NameDrawApplication.class)
-@AutoConfigureWebMvc
+@SpringBootTest(classes = {com.namedraw.NameDrawApplication.class, ContractTestConfig.class})
+@AutoConfigureMockMvc
 @ActiveProfiles("test")
 public class DrawsOpenContractTest {
 
