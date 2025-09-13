@@ -88,7 +88,16 @@ public class JwtTokenService {
     }
 
     try {
-      Jwts.parser().verifyWith(signingKey).build().parseSignedClaims(token);
+      Claims claims =
+          Jwts.parser().verifyWith(signingKey).build().parseSignedClaims(token).getPayload();
+
+      // Check if token is marked as revoked in claims
+      String revokedClaim = claims.get("revoked", String.class);
+      if ("true".equals(revokedClaim)) {
+        log.debug("Token is marked as revoked in claims");
+        return false;
+      }
+
       return true;
     } catch (MalformedJwtException e) {
       log.error("Invalid JWT token: {}", e.getMessage());
@@ -138,6 +147,22 @@ public class JwtTokenService {
   public void invalidateToken(String token) {
     blacklistedTokens.add(token);
     log.debug("Token added to blacklist");
+  }
+
+  /**
+   * Checks if a token is blacklisted.
+   *
+   * @param token the token to check
+   * @return true if the token is blacklisted, false otherwise
+   */
+  public boolean isTokenBlacklisted(String token) {
+    return blacklistedTokens.contains(token);
+  }
+
+  /** Clears all blacklisted tokens. Used for testing purposes. */
+  public void clearBlacklist() {
+    blacklistedTokens.clear();
+    log.debug("Token blacklist cleared");
   }
 
   /**

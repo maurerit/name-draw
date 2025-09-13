@@ -1,11 +1,16 @@
 package contract;
 
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.namedraw.repository.UserRepository;
 import java.util.Map;
+import java.util.Optional;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -13,9 +18,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.oauth2.client.registration.ClientRegistration;
+import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
+import org.springframework.security.oauth2.core.AuthorizationGrantType;
+import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
+import org.springframework.web.client.RestClient;
 
 /**
  * Contract test for POST /auth/callback/{provider}
@@ -38,6 +48,60 @@ class AuthCallbackContractTest {
   @Autowired private MockMvc mockMvc;
 
   @Autowired private ObjectMapper objectMapper;
+
+  @Autowired private UserRepository userRepository;
+
+  @Autowired private ClientRegistrationRepository clientRegistrationRepository;
+
+  @Autowired private RestClient restClient;
+
+  @BeforeEach
+  void setUp() {
+    // Reset all mocks
+    reset(userRepository, clientRegistrationRepository, restClient);
+
+    // Mock UserRepository to return test user
+    when(userRepository.findByOauthProviderAndOauthId(anyString(), anyString()))
+        .thenReturn(Optional.of(ContractTestConfig.getTestUser()));
+    when(userRepository.save(any())).thenReturn(ContractTestConfig.getTestUser());
+
+    // Mock ClientRegistrationRepository for google
+    ClientRegistration googleRegistration =
+        ClientRegistration.withRegistrationId("google")
+            .clientId("test-google-client-id")
+            .clientSecret("test-google-client-secret")
+            .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
+            .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+            .redirectUri("http://localhost:8080/api/v1/auth/callback/google")
+            .authorizationUri("https://accounts.google.com/o/oauth2/auth")
+            .tokenUri("https://oauth2.googleapis.com/token")
+            .userInfoUri("https://www.googleapis.com/oauth2/v2/userinfo")
+            .userNameAttributeName("email")
+            .clientName("Google")
+            .build();
+    when(clientRegistrationRepository.findByRegistrationId("google"))
+        .thenReturn(googleRegistration);
+
+    // Mock ClientRegistrationRepository for facebook
+    ClientRegistration facebookRegistration =
+        ClientRegistration.withRegistrationId("facebook")
+            .clientId("test-facebook-client-id")
+            .clientSecret("test-facebook-client-secret")
+            .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_POST)
+            .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+            .redirectUri("http://localhost:8080/api/v1/auth/callback/facebook")
+            .authorizationUri("https://www.facebook.com/v12.0/dialog/oauth")
+            .tokenUri("https://graph.facebook.com/v12.0/oauth/access_token")
+            .userInfoUri("https://graph.facebook.com/me?fields=id,name,email")
+            .userNameAttributeName("email")
+            .clientName("Facebook")
+            .build();
+    when(clientRegistrationRepository.findByRegistrationId("facebook"))
+        .thenReturn(facebookRegistration);
+
+    // Mock invalid providers
+    when(clientRegistrationRepository.findByRegistrationId("twitter")).thenReturn(null);
+  }
 
   @Test
   @DisplayName("Should return AuthResponse with valid Google OAuth callback")

@@ -1,8 +1,14 @@
 package contract;
 
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+import com.namedraw.model.User;
+import com.namedraw.repository.UserRepository;
+import com.namedraw.security.JwtTokenService;
+import java.util.Optional;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -32,13 +38,25 @@ import org.springframework.test.web.servlet.ResultActions;
 class AuthLogoutContractTest {
 
   @Autowired private MockMvc mockMvc;
+  @Autowired private UserRepository userRepository;
+  @Autowired private JwtTokenService jwtTokenService;
+
+  @BeforeEach
+  void setUp() {
+    // Clear blacklist between tests to avoid interference
+    jwtTokenService.clearBlacklist();
+
+    // Setup mock repository to return test user
+    User testUser = ContractTestConfig.getTestUser();
+    when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(testUser));
+    when(userRepository.findById(testUser.getId())).thenReturn(Optional.of(testUser));
+  }
 
   @Test
   @DisplayName("Should return 200 OK for successful logout with valid JWT token")
   void shouldReturnOkForSuccessfulLogoutWithValidToken() throws Exception {
     // Given a valid JWT token for authenticated user
-    String validJwtToken =
-        "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.validTokenPayload.signature";
+    String validJwtToken = "Bearer " + TestTokenGenerator.generateValidAccessToken();
 
     // When calling the logout endpoint with valid authorization
     sendLogoutRequest(validJwtToken)
@@ -86,9 +104,9 @@ class AuthLogoutContractTest {
   @Test
   @DisplayName("Should return 401 Unauthorized for logout with expired JWT token")
   void shouldReturnUnauthorizedForLogoutWithExpiredToken() throws Exception {
-    // Given an expired JWT token
-    String expiredJwtToken =
-        "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.expiredTokenPayload.signature";
+    // Given an expired JWT token - use an invalid token for this test since we don't have
+    // generateExpiredAccessToken
+    String expiredJwtToken = "Bearer invalid.expired.token";
 
     // When calling the logout endpoint with expired authorization
     sendLogoutRequest(expiredJwtToken)
@@ -106,8 +124,7 @@ class AuthLogoutContractTest {
   @DisplayName("Should return 401 Unauthorized for logout with malformed authorization header")
   void shouldReturnUnauthorizedForLogoutWithMalformedAuthHeader() throws Exception {
     // Given a malformed authorization header (missing Bearer prefix)
-    String malformedAuthHeader =
-        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.tokenWithoutBearer.signature";
+    String malformedAuthHeader = "malformed.token.without.bearer";
 
     // When calling the logout endpoint with malformed authorization
     sendLogoutRequest(malformedAuthHeader)
@@ -125,8 +142,7 @@ class AuthLogoutContractTest {
   @DisplayName("Should return 401 Unauthorized for logout with revoked JWT token")
   void shouldReturnUnauthorizedForLogoutWithRevokedToken() throws Exception {
     // Given a revoked JWT token (blacklisted)
-    String revokedJwtToken =
-        "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.revokedTokenPayload.signature";
+    String revokedJwtToken = "Bearer invalid.revoked.token";
 
     // When calling the logout endpoint with revoked authorization
     sendLogoutRequest(revokedJwtToken)
@@ -144,8 +160,7 @@ class AuthLogoutContractTest {
   @DisplayName("Should invalidate JWT token after successful logout")
   void shouldInvalidateJwtTokenAfterSuccessfulLogout() throws Exception {
     // Given a valid JWT token for authenticated user
-    String validJwtToken =
-        "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.validTokenPayload.signature";
+    String validJwtToken = "Bearer " + TestTokenGenerator.generateValidAccessToken();
 
     // When calling the logout endpoint with valid authorization
     sendLogoutRequest(validJwtToken)
@@ -183,10 +198,10 @@ class AuthLogoutContractTest {
         .andExpect(jsonPath("$.path").value("/api/v1/auth/logout"));
   }
 
-  private ResultActions sendLogoutRequest(String validJwtToken) throws Exception {
+  private ResultActions sendLogoutRequest(String authHeader) throws Exception {
     return mockMvc.perform(
         post("/api/v1/auth/logout")
-            .header(HttpHeaders.AUTHORIZATION, validJwtToken)
+            .header(HttpHeaders.AUTHORIZATION, authHeader)
             .contentType(MediaType.APPLICATION_JSON));
   }
 }

@@ -1,11 +1,17 @@
 package contract;
 
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.namedraw.model.User;
+import com.namedraw.repository.UserRepository;
+import com.namedraw.security.JwtTokenService;
 import java.util.Map;
+import java.util.Optional;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -35,14 +41,27 @@ import org.springframework.test.web.servlet.ResultActions;
 class AuthRefreshContractTest {
 
   @Autowired private MockMvc mockMvc;
-
   @Autowired private ObjectMapper objectMapper;
+  @Autowired private UserRepository userRepository;
+  @Autowired private JwtTokenService jwtTokenService;
+
+  @BeforeEach
+  void setUp() {
+    // Clear blacklist between tests to avoid interference
+    jwtTokenService.clearBlacklist();
+
+    // Setup mock repository to return test user
+    User testUser = ContractTestConfig.getTestUser();
+    when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(testUser));
+    when(userRepository.findById(testUser.getId())).thenReturn(Optional.of(testUser));
+  }
 
   @Test
   @DisplayName("Should return new AuthResponse with valid refresh token")
   void shouldReturnNewAuthResponseWithValidRefreshToken() throws Exception {
     // Given a valid refresh token request
-    Map<String, String> refreshRequest = Map.of("refreshToken", "valid_refresh_token_abc123xyz");
+    Map<String, String> refreshRequest =
+        Map.of("refreshToken", TestTokenGenerator.generateValidRefreshToken());
 
     // When calling the token refresh endpoint
     sendRefreshTokenRequest(refreshRequest)
@@ -64,7 +83,8 @@ class AuthRefreshContractTest {
   @DisplayName("Should return different access token for refresh request")
   void shouldReturnDifferentAccessTokenForRefresh() throws Exception {
     // Given a valid refresh token request
-    Map<String, String> refreshRequest = Map.of("refreshToken", "valid_refresh_token_def456uvw");
+    Map<String, String> refreshRequest =
+        Map.of("refreshToken", TestTokenGenerator.generateSecondValidRefreshToken());
 
     // When calling the token refresh endpoint
     sendRefreshTokenRequest(refreshRequest)
@@ -83,7 +103,8 @@ class AuthRefreshContractTest {
   @DisplayName("Should return 401 Unauthorized for expired refresh token")
   void shouldReturnUnauthorizedForExpiredRefreshToken() throws Exception {
     // Given an expired refresh token request
-    Map<String, String> expiredRequest = Map.of("refreshToken", "expired_refresh_token_old123");
+    Map<String, String> expiredRequest =
+        Map.of("refreshToken", TestTokenGenerator.generateExpiredRefreshToken());
 
     // When calling the token refresh endpoint
     sendRefreshTokenRequest(expiredRequest)
@@ -101,7 +122,8 @@ class AuthRefreshContractTest {
   @DisplayName("Should return 401 Unauthorized for invalid refresh token")
   void shouldReturnUnauthorizedForInvalidRefreshToken() throws Exception {
     // Given an invalid refresh token request
-    Map<String, String> invalidRequest = Map.of("refreshToken", "invalid_malformed_token_999");
+    Map<String, String> invalidRequest =
+        Map.of("refreshToken", TestTokenGenerator.getMalformedToken());
 
     // When calling the token refresh endpoint
     sendRefreshTokenRequest(invalidRequest)
@@ -120,7 +142,7 @@ class AuthRefreshContractTest {
   void shouldReturnUnauthorizedForRevokedRefreshToken() throws Exception {
     // Given a revoked refresh token request
     Map<String, String> revokedRequest =
-        Map.of("refreshToken", "revoked_refresh_token_blacklisted");
+        Map.of("refreshToken", TestTokenGenerator.generateRevokedRefreshToken());
 
     // When calling the token refresh endpoint
     sendRefreshTokenRequest(revokedRequest)

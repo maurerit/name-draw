@@ -1,12 +1,15 @@
 package com.namedraw.controller;
 
+import com.namedraw.security.JwtTokenService;
 import com.namedraw.service.AuthService;
 import jakarta.servlet.http.HttpServletRequest;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -35,6 +38,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
 
   private final AuthService authService;
+  private final JwtTokenService jwtTokenService;
 
   /**
    * Initiate OAuth login with specified provider.
@@ -126,21 +130,29 @@ public class AuthController {
   /**
    * Logout user and invalidate JWT token.
    *
-   * @param jwt Current user's JWT token
+   * @param jwt Current user's JWT token (can be null if token is invalid)
    * @return Success response
    */
   @PostMapping("/logout")
-  public ResponseEntity<Void> logout(@AuthenticationPrincipal Jwt jwt) {
-    log.info("Processing logout request for user: {}", jwt.getSubject());
-
-    try {
-      String token = jwt.getTokenValue();
-      authService.logout(token);
-      return ResponseEntity.ok().build();
-    } catch (Exception e) {
-      log.error("Logout processing failed", e);
-      return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+  public ResponseEntity<Map<String, String>> logout(@AuthenticationPrincipal Jwt jwt) {
+    if (jwt == null) {
+      log.warn("Logout attempted with invalid or missing JWT token");
+      return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+              Map.of(
+                  "error", "Unauthorized",
+                  "message", "Invalid or missing JWT token",
+                  "timestamp", Instant.now().toString(),
+                  "path", "/api/v1/auth/logout"));
     }
+
+    // Get the raw token value and invalidate it
+    String tokenValue = jwt.getTokenValue();
+    jwtTokenService.invalidateToken(tokenValue);
+    log.info("User logged out and token invalidated");
+
+    return ResponseEntity.ok(Map.of("message", "Logout successful"));
   }
 
   /**
