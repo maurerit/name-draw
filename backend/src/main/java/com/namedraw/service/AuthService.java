@@ -1,5 +1,6 @@
 package com.namedraw.service;
 
+import com.namedraw.client.AuthClient;
 import com.namedraw.exception.UnauthorizedException;
 import com.namedraw.model.User;
 import com.namedraw.security.JwtTokenService;
@@ -8,16 +9,10 @@ import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
-import org.springframework.web.client.RestClient;
 import org.springframework.web.util.UriComponentsBuilder;
 
 /**
@@ -41,7 +36,7 @@ public class AuthService {
   private final UserService userService;
   private final JwtTokenService jwtTokenService;
   private final ClientRegistrationRepository clientRegistrationRepository;
-  private final RestClient restClient;
+  private final AuthClient authClient;
 
   @Value("${spring.security.oauth2.client.registration.google.client-id}")
   private String googleClientId;
@@ -204,33 +199,16 @@ public class AuthService {
     ClientRegistration clientRegistration = getClientRegistration(provider);
     String redirectUri = baseUrl + "/api/v1/auth/callback/" + provider;
 
-    MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
-    params.add("client_id", clientRegistration.getClientId());
-    params.add("client_secret", clientRegistration.getClientSecret());
-    params.add("code", code);
-    params.add("grant_type", "authorization_code");
-    params.add("redirect_uri", redirectUri);
-
-    HttpHeaders headers = new HttpHeaders();
-    headers.add("Accept", "application/json");
-    headers.add("Content-Type", "application/x-www-form-urlencoded");
-
-    HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(params, headers);
-
     try {
-      @SuppressWarnings("rawtypes")
-      ResponseEntity<Map> response =
-          restClient
-              .post()
-              .uri(clientRegistration.getProviderDetails().getTokenUri())
-              .headers(httpHeaders -> httpHeaders.addAll(request.getHeaders()))
-              .body(request.getBody())
-              .retrieve()
-              .toEntity(Map.class);
+      Map<String, Object> responseBody =
+          authClient.exchangeCodeForToken(
+              clientRegistration.getProviderDetails().getTokenUri(),
+              clientRegistration.getClientId(),
+              clientRegistration.getClientSecret(),
+              code,
+              redirectUri);
 
-      @SuppressWarnings("unchecked")
-      Map<String, Object> responseBody = (Map<String, Object>) response.getBody();
-      if (responseBody == null || !responseBody.containsKey("access_token")) {
+      if (!responseBody.containsKey("access_token")) {
         throw new IllegalArgumentException("Failed to obtain access token from " + provider);
       }
 
@@ -244,25 +222,10 @@ public class AuthService {
   private UserInfo getUserInfoFromProvider(String provider, String accessToken) {
     ClientRegistration clientRegistration = getClientRegistration(provider);
 
-    HttpHeaders headers = new HttpHeaders();
-    headers.add("Authorization", "Bearer " + accessToken);
-    HttpEntity<String> request = new HttpEntity<>(headers);
-
     try {
-      @SuppressWarnings("rawtypes")
-      ResponseEntity<Map> response =
-          restClient
-              .get()
-              .uri(clientRegistration.getProviderDetails().getUserInfoEndpoint().getUri())
-              .headers(httpHeaders -> httpHeaders.addAll(request.getHeaders()))
-              .retrieve()
-              .toEntity(Map.class);
-
-      @SuppressWarnings("unchecked")
-      Map<String, Object> userAttributes = (Map<String, Object>) response.getBody();
-      if (userAttributes == null) {
-        throw new IllegalArgumentException("Failed to get user info from " + provider);
-      }
+      Map<String, Object> userAttributes =
+          authClient.getUserInfo(
+              clientRegistration.getProviderDetails().getUserInfoEndpoint().getUri(), accessToken);
 
       return parseUserInfo(provider, userAttributes);
     } catch (Exception e) {
