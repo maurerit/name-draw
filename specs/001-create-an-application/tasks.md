@@ -93,7 +93,7 @@
 - [x] T032 [P] UserRepository JPA interface in `backend/src/main/java/repository/UserRepository.java`
 - [x] T033 [P] DrawRepository JPA interface in `backend/src/main/java/repository/DrawRepository.java`
 - [x] T034 [P] ParticipationRepository JPA interface in `backend/src/main/java/repository/ParticipationRepository.java`
-- [ ] T035 [P] DrawnNameRepository JPA interface in `backend/src/main/java/repository/DrawnNameRepository.java`
+- [x] T035 [P] DrawnNameRepository JPA interface in `backend/src/main/java/repository/DrawnNameRepository.java`
 
 ## Phase 3.6: Service Layer
 - [ ] T036 UserService business logic in `backend/src/main/java/service/UserService.java`
