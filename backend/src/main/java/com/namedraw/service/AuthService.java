@@ -10,7 +10,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
@@ -18,7 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.RestClient;
 import org.springframework.web.util.UriComponentsBuilder;
 
 /**
@@ -42,7 +41,7 @@ public class AuthService {
   private final UserService userService;
   private final JwtTokenService jwtTokenService;
   private final ClientRegistrationRepository clientRegistrationRepository;
-  private final RestTemplate restTemplate = new RestTemplate();
+  private final RestClient restClient;
 
   @Value("${spring.security.oauth2.client.registration.google.client-id}")
   private String googleClientId;
@@ -221,11 +220,13 @@ public class AuthService {
     try {
       @SuppressWarnings("rawtypes")
       ResponseEntity<Map> response =
-          restTemplate.exchange(
-              clientRegistration.getProviderDetails().getTokenUri(),
-              HttpMethod.POST,
-              request,
-              Map.class);
+          restClient
+              .post()
+              .uri(clientRegistration.getProviderDetails().getTokenUri())
+              .headers(httpHeaders -> httpHeaders.addAll(request.getHeaders()))
+              .body(request.getBody())
+              .retrieve()
+              .toEntity(Map.class);
 
       @SuppressWarnings("unchecked")
       Map<String, Object> responseBody = (Map<String, Object>) response.getBody();
@@ -250,11 +251,12 @@ public class AuthService {
     try {
       @SuppressWarnings("rawtypes")
       ResponseEntity<Map> response =
-          restTemplate.exchange(
-              clientRegistration.getProviderDetails().getUserInfoEndpoint().getUri(),
-              HttpMethod.GET,
-              request,
-              Map.class);
+          restClient
+              .get()
+              .uri(clientRegistration.getProviderDetails().getUserInfoEndpoint().getUri())
+              .headers(httpHeaders -> httpHeaders.addAll(request.getHeaders()))
+              .retrieve()
+              .toEntity(Map.class);
 
       @SuppressWarnings("unchecked")
       Map<String, Object> userAttributes = (Map<String, Object>) response.getBody();
