@@ -55,10 +55,10 @@
 **CRITICAL: These tests MUST be written and MUST FAIL before ANY implementation**
 
 ### Authentication Contract Tests
-- [ ] T009 [P] Contract test GET /auth/login/{provider} in `backend/src/test/java/contract/AuthLoginContractTest.java`
-- [ ] T010 [P] Contract test POST /auth/callback/{provider} in `backend/src/test/java/contract/AuthCallbackContractTest.java`
-- [ ] T011 [P] Contract test POST /auth/refresh in `backend/src/test/java/contract/AuthRefreshContractTest.java`
-- [ ] T012 [P] Contract test POST /auth/logout in `backend/src/test/java/contract/AuthLogoutContractTest.java`
+- [x] T009 [P] Contract test GET /auth/login/{provider} in `backend/src/test/java/contract/AuthLoginContractTest.java`
+- [x] T010 [P] Contract test POST /auth/callback/{provider} in `backend/src/test/java/contract/AuthCallbackContractTest.java`
+- [x] T011 [P] Contract test POST /auth/refresh in `backend/src/test/java/contract/AuthRefreshContractTest.java`
+- [x] T012 [P] Contract test POST /auth/logout in `backend/src/test/java/contract/AuthLogoutContractTest.java`
 
 ### User Management Contract Tests
 - [x] T013 [P] Contract test GET /users/me in `backend/src/test/java/contract/UserProfileContractTest.java`
