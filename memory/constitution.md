@@ -27,6 +27,11 @@ Boilerplate go away
 [PRINCIPLE_3_DESCRIPTION]
 Even though the AI is writing the majority of this code I still want to keep boilerplate to a minimum.  Use Lombok in all entity and data transfer classes.  We're already using Spring for a huge majority of boilerplate so let's keep it low.
 
+## [PRINCIPLE_6_NAME]
+We have checks for a reason
+[PRINCIPLE_6_DESCRIPTION]
+We have put our checks in place to keep the code clean, make sure you are not skipping checks just to see if things compile.  The code style is part of the code compilation and these checks should never be skipped.
+
 ## [SECTION_1_NAME]
 Login with Google and Login with Facebook will be used
 
@@ -39,4 +44,4 @@ Constitution supersedes all other practices; Amendments require documentation, a
 [GOVERNANCE_RULES]
 
 
-**Version**: 1.1.0 | **Ratified**: 2025-09-13 | **Last Amended**: 2025-09-13
+**Version**: 1.2.0 | **Ratified**: 2025-09-13 | **Last Amended**: 2025-09-13
