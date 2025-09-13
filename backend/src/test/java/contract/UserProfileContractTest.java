@@ -120,10 +120,9 @@ public class UserProfileContractTest {
   }
 
   private ResultActions retrieveUserProfile(String validJwtToken) throws Exception {
-    return mockMvc
-        .perform(
-            get("/api/v1/users/me")
-                .header("Authorization", validJwtToken)
-                .contentType(MediaType.APPLICATION_JSON));
+    return mockMvc.perform(
+        get("/api/v1/users/me")
+            .header("Authorization", validJwtToken)
+            .contentType(MediaType.APPLICATION_JSON));
   }
 }

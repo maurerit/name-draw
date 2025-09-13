@@ -300,12 +300,12 @@ public class DrawsCreateContractTest {
         .andExpect(jsonPath("$.message").exists());
   }
 
-  private ResultActions submitDrawRequest(String validJwtToken, String createDrawRequest) throws Exception {
-    return mockMvc
-        .perform(
-            post("/api/v1/draws")
-                .header("Authorization", validJwtToken)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(createDrawRequest));
+  private ResultActions submitDrawRequest(String validJwtToken, String createDrawRequest)
+      throws Exception {
+    return mockMvc.perform(
+        post("/api/v1/draws")
+            .header("Authorization", validJwtToken)
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(createDrawRequest));
   }
 }

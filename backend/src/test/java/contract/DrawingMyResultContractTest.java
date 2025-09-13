@@ -172,10 +172,10 @@ public class DrawingMyResultContractTest {
         .andExpect(jsonPath("$.drawnAt").isString());
   }
 
-  private ResultActions executeDrawResultFetch(String validJwtToken, String drawIdWithResult) throws Exception {
-    return mockMvc
-        .perform(
-            get("/api/v1/draws/{drawId}/my-result", drawIdWithResult)
-                .header("Authorization", validJwtToken));
+  private ResultActions executeDrawResultFetch(String validJwtToken, String drawIdWithResult)
+      throws Exception {
+    return mockMvc.perform(
+        get("/api/v1/draws/{drawId}/my-result", drawIdWithResult)
+            .header("Authorization", validJwtToken));
   }
 }

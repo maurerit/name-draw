@@ -22,6 +22,11 @@ AI will not hallucinate any decisions
 [PRINCIPLE_3_DESCRIPTION]
 I've seen the AI write down decisions that were made but I never made those decisions.  Do not let the AI hallucinate any decisions, we are keeping a record of prompts so the AI can run through these when generating the research.md file and use them to generate the decisions made.  Each decision file should be numbered so we can see the sequence of the conversation.  These files should list naturally in a directly listing in the order they are numbered.  So we should avoid situations like 10 and 1 being grouped together.  Let's plan on a maximum of 999 decisions per spec so use 3 digits.
 
+### [PRINCIPLE_5_NAME]
+Boilerplate go away
+[PRINCIPLE_5_DESCRIPTION]
+Even though the AI is writing the majority of this code I still want to keep boilerplate to a minimum.  Use Lombok in all entity and data transfer classes.  We're already using Spring for a huge majority of boilerplate so let's keep it low.
+
 ## [SECTION_1_NAME]
 Login with Google and Login with Facebook will be used
 
@@ -34,4 +39,4 @@ Constitution supersedes all other practices; Amendments require documentation, a
 [GOVERNANCE_RULES]
 
 
-**Version**: 1.0.0 | **Ratified**: 2025-09-08 | **Last Amended**: 2025-09-08
+**Version**: 1.1.0 | **Ratified**: 2025-09-13 | **Last Amended**: 2025-09-13

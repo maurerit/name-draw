@@ -83,11 +83,11 @@
 - [x] T026 [P] Integration test edge cases (self-draws, concurrent access) in `backend/src/test/java/integration/EdgeCasesTest.java`
 
 ## Phase 3.4: Entity Models (ONLY after tests are failing)
-- [ ] T027 [P] User entity model in `backend/src/main/java/model/User.java`
-- [ ] T028 [P] Draw entity model in `backend/src/main/java/model/Draw.java`
-- [ ] T029 [P] Participation entity model in `backend/src/main/java/model/Participation.java`
-- [ ] T030 [P] DrawnName entity model in `backend/src/main/java/model/DrawnName.java`
-- [ ] T031 [P] DrawQueue entity model (in-memory) in `backend/src/main/java/model/DrawQueue.java`
+- [x] T027 [P] User entity model in `backend/src/main/java/model/User.java`
+- [x] T028 [P] Draw entity model in `backend/src/main/java/model/Draw.java`
+- [x] T029 [P] Participation entity model in `backend/src/main/java/model/Participation.java`
+- [x] T030 [P] DrawnName entity model in `backend/src/main/java/model/DrawnName.java`
+- [x] T031 [P] DrawQueue entity model (in-memory) in `backend/src/main/java/model/DrawQueue.java`
 
 ## Phase 3.5: Repository Layer
 - [ ] T032 [P] UserRepository JPA interface in `backend/src/main/java/repository/UserRepository.java`

@@ -184,10 +184,9 @@ class AuthLogoutContractTest {
   }
 
   private ResultActions sendLogoutRequest(String validJwtToken) throws Exception {
-    return mockMvc
-        .perform(
-            post("/api/v1/auth/logout")
-                .header(HttpHeaders.AUTHORIZATION, validJwtToken)
-                .contentType(MediaType.APPLICATION_JSON));
+    return mockMvc.perform(
+        post("/api/v1/auth/logout")
+            .header(HttpHeaders.AUTHORIZATION, validJwtToken)
+            .contentType(MediaType.APPLICATION_JSON));
   }
 }

@@ -170,10 +170,9 @@ public class DrawsListContractTest {
   }
 
   private ResultActions sendDrawsRequest(String validJwtToken) throws Exception {
-    return mockMvc
-        .perform(
-            get("/api/v1/draws")
-                .header("Authorization", validJwtToken)
-                .contentType(MediaType.APPLICATION_JSON));
+    return mockMvc.perform(
+        get("/api/v1/draws")
+            .header("Authorization", validJwtToken)
+            .contentType(MediaType.APPLICATION_JSON));
   }
 }

@@ -204,11 +204,10 @@ class AuthCallbackContractTest {
   }
 
   private ResultActions sendOAuthCallback(String provider, Map<String, String> callbackRequest)
-        throws Exception, JsonProcessingException {
-    return mockMvc
-        .perform(
-            post("/api/v1/auth/callback/{provider}", provider)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(callbackRequest)));
+      throws Exception, JsonProcessingException {
+    return mockMvc.perform(
+        post("/api/v1/auth/callback/{provider}", provider)
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(callbackRequest)));
   }
 }

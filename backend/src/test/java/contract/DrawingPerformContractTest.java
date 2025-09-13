@@ -200,10 +200,9 @@ public class DrawingPerformContractTest {
   }
 
   private ResultActions sendDrawRequest(String validJwtToken, String drawId) throws Exception {
-    return mockMvc
-        .perform(
-            post("/api/v1/draws/{drawId}/draw", drawId)
-                .header("Authorization", validJwtToken)
-                .contentType(MediaType.APPLICATION_JSON));
+    return mockMvc.perform(
+        post("/api/v1/draws/{drawId}/draw", drawId)
+            .header("Authorization", validJwtToken)
+            .contentType(MediaType.APPLICATION_JSON));
   }
 }
