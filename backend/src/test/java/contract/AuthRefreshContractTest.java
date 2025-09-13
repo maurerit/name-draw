@@ -27,7 +27,7 @@ import org.springframework.test.web.servlet.ResultActions;
  * Responses: - 200: Token refreshed successfully (AuthResponse schema) - 401: Invalid refresh token
  * (ErrorResponse schema)
  */
-@SpringBootTest
+@SpringBootTest(classes = com.namedraw.NameDrawApplication.class)
 @AutoConfigureWebMvc
 @ActiveProfiles("test")
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)

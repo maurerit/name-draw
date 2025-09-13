@@ -24,7 +24,7 @@ import org.springframework.test.web.servlet.ResultActions;
  * [facebook, google] - Responses: - 302: Redirect to OAuth provider - 400: Invalid provider
  * (ErrorResponse schema)
  */
-@SpringBootTest
+@SpringBootTest(classes = com.namedraw.NameDrawApplication.class)
 @AutoConfigureWebMvc
 @ActiveProfiles("test")
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
