@@ -10,6 +10,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -18,6 +19,8 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -105,15 +108,13 @@ public class Draw {
   @Column(name = "archived_at")
   private LocalDateTime archivedAt;
 
-  // TODO: Uncomment when Participation entity is created (T029)
-  // @OneToMany(mappedBy = "draw", fetch = FetchType.LAZY)
-  // @Builder.Default
-  // private List<Participation> participations = new ArrayList<>();
+  @OneToMany(mappedBy = "draw", fetch = FetchType.LAZY)
+  @Builder.Default
+  private List<Participation> participations = new ArrayList<>();
 
-  // TODO: Uncomment when DrawnName entity is created (T030)
-  // @OneToMany(mappedBy = "draw", fetch = FetchType.LAZY)
-  // @Builder.Default
-  // private List<DrawnName> drawnNames = new ArrayList<>();
+  @OneToMany(mappedBy = "draw", fetch = FetchType.LAZY)
+  @Builder.Default
+  private List<DrawnName> drawnNames = new ArrayList<>();
 
   /**
    * Transitions the draw to OPEN state.
