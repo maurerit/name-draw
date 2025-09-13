@@ -61,26 +61,26 @@
 - [ ] T012 [P] Contract test POST /auth/logout in `backend/src/test/java/contract/AuthLogoutContractTest.java`
 
 ### User Management Contract Tests
-- [ ] T013 [P] Contract test GET /users/me in `backend/src/test/java/contract/UserProfileContractTest.java`
-- [ ] T014 [P] Contract test GET /users/me/draws in `backend/src/test/java/contract/UserDrawsContractTest.java`
+- [x] T013 [P] Contract test GET /users/me in `backend/src/test/java/contract/UserProfileContractTest.java`
+- [x] T014 [P] Contract test GET /users/me/draws in `backend/src/test/java/contract/UserDrawsContractTest.java`
 
 ### Draw Management Contract Tests
-- [ ] T015 [P] Contract test GET /draws in `backend/src/test/java/contract/DrawsListContractTest.java`
-- [ ] T016 [P] Contract test POST /draws in `backend/src/test/java/contract/DrawsCreateContractTest.java`
-- [ ] T017 [P] Contract test GET /draws/{drawId} in `backend/src/test/java/contract/DrawsGetContractTest.java`
-- [ ] T018 [P] Contract test PUT /draws/{drawId} in `backend/src/test/java/contract/DrawsUpdateContractTest.java`
-- [ ] T019 [P] Contract test POST /draws/{drawId}/join in `backend/src/test/java/contract/DrawsJoinContractTest.java`
-- [ ] T020 [P] Contract test POST /draws/{drawId}/open in `backend/src/test/java/contract/DrawsOpenContractTest.java`
+- [x] T015 [P] Contract test GET /draws in `backend/src/test/java/contract/DrawsListContractTest.java`
+- [x] T016 [P] Contract test POST /draws in `backend/src/test/java/contract/DrawsCreateContractTest.java`
+- [x] T017 [P] Contract test GET /draws/{drawId} in `backend/src/test/java/contract/DrawsGetContractTest.java`
+- [x] T018 [P] Contract test PUT /draws/{drawId} in `backend/src/test/java/contract/DrawsUpdateContractTest.java`
+- [x] T019 [P] Contract test POST /draws/{drawId}/join in `backend/src/test/java/contract/DrawsJoinContractTest.java`
+- [x] T020 [P] Contract test POST /draws/{drawId}/open in `backend/src/test/java/contract/DrawsOpenContractTest.java`
 
 ### Drawing Operation Contract Tests
-- [ ] T021 [P] Contract test POST /draws/{drawId}/draw in `backend/src/test/java/contract/DrawingPerformContractTest.java`
-- [ ] T022 [P] Contract test GET /draws/{drawId}/results in `backend/src/test/java/contract/DrawingResultsContractTest.java`
-- [ ] T023 [P] Contract test GET /draws/{drawId}/my-result in `backend/src/test/java/contract/DrawingMyResultContractTest.java`
+- [x] T021 [P] Contract test POST /draws/{drawId}/draw in `backend/src/test/java/contract/DrawingPerformContractTest.java`
+- [x] T022 [P] Contract test GET /draws/{drawId}/results in `backend/src/test/java/contract/DrawingResultsContractTest.java`
+- [x] T023 [P] Contract test GET /draws/{drawId}/my-result in `backend/src/test/java/contract/DrawingMyResultContractTest.java`
 
 ### Integration Tests
-- [ ] T024 [P] Integration test draw creator flow in `backend/src/test/java/integration/DrawCreatorFlowTest.java`
-- [ ] T025 [P] Integration test participant flow in `backend/src/test/java/integration/ParticipantFlowTest.java`
-- [ ] T026 [P] Integration test edge cases (self-draws, concurrent access) in `backend/src/test/java/integration/EdgeCasesTest.java`
+- [x] T024 [P] Integration test draw creator flow in `backend/src/test/java/integration/DrawCreatorFlowTest.java`
+- [x] T025 [P] Integration test participant flow in `backend/src/test/java/integration/ParticipantFlowTest.java`
+- [x] T026 [P] Integration test edge cases (self-draws, concurrent access) in `backend/src/test/java/integration/EdgeCasesTest.java`
 
 ## Phase 3.4: Entity Models (ONLY after tests are failing)
 - [ ] T027 [P] User entity model in `backend/src/main/java/model/User.java`
