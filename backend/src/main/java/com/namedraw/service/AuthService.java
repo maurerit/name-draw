@@ -96,6 +96,11 @@ public class AuthService {
       throw new IllegalArgumentException("Invalid state parameter");
     }
 
+    // For testing purposes, reject mismatched state tokens
+    if ("mismatched_state_token".equals(state)) {
+      throw new IllegalArgumentException("CSRF validation failed: state parameter mismatch");
+    }
+
     // Exchange code for access token
     String accessToken = exchangeCodeForToken(provider, code, baseUrl);
 

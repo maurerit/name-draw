@@ -1,5 +1,6 @@
 package contract;
 
+import com.namedraw.client.AuthClient;
 import com.namedraw.model.User;
 import com.namedraw.repository.UserRepository;
 import java.util.UUID;
@@ -7,7 +8,6 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Profile;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
-import org.springframework.web.client.RestClient;
 
 @TestConfiguration
 @Profile("test")
@@ -20,7 +20,7 @@ public class ContractTestConfig {
 
   @MockBean private ClientRegistrationRepository clientRegistrationRepository;
 
-  @MockBean private RestClient restClient;
+  @MockBean private AuthClient authClient;
 
   static {
     testUser =

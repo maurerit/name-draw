@@ -7,6 +7,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.namedraw.client.AuthClient;
 import com.namedraw.repository.UserRepository;
 import java.util.Map;
 import java.util.Optional;
@@ -25,7 +26,6 @@ import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
-import org.springframework.web.client.RestClient;
 
 /**
  * Contract test for POST /auth/callback/{provider}
@@ -53,12 +53,12 @@ class AuthCallbackContractTest {
 
   @Autowired private ClientRegistrationRepository clientRegistrationRepository;
 
-  @Autowired private RestClient restClient;
+  @Autowired private AuthClient authClient;
 
   @BeforeEach
   void setUp() {
     // Reset all mocks
-    reset(userRepository, clientRegistrationRepository, restClient);
+    reset(userRepository, clientRegistrationRepository, authClient);
 
     // Mock UserRepository to return test user
     when(userRepository.findByOauthProviderAndOauthId(anyString(), anyString()))
@@ -101,6 +101,42 @@ class AuthCallbackContractTest {
 
     // Mock invalid providers
     when(clientRegistrationRepository.findByRegistrationId("twitter")).thenReturn(null);
+
+    // Mock AuthClient for successful token exchange
+    Map<String, Object> mockTokenResponse =
+        Map.of(
+            "access_token", "mock_access_token_12345",
+            "token_type", "Bearer",
+            "expires_in", 3600);
+    when(authClient.exchangeCodeForToken(
+            anyString(), anyString(), anyString(), anyString(), anyString()))
+        .thenReturn(mockTokenResponse);
+
+    // Mock AuthClient for invalid authorization codes
+    when(authClient.exchangeCodeForToken(
+            anyString(), anyString(), anyString(), eq("invalid_or_expired_auth_code"), anyString()))
+        .thenThrow(new RuntimeException("Invalid authorization code"));
+
+    // Mock AuthClient for Google user info
+    Map<String, Object> mockGoogleUserInfo =
+        Map.of(
+            "sub", "test123",
+            "email", "test@example.com",
+            "name", "Test User",
+            "picture", "https://example.com/avatar.jpg");
+    when(authClient.getUserInfo(eq("https://www.googleapis.com/oauth2/v2/userinfo"), anyString()))
+        .thenReturn(mockGoogleUserInfo);
+
+    // Mock AuthClient for Facebook user info
+    Map<String, Object> mockFacebookUserInfo =
+        Map.of(
+            "id", "test123",
+            "email", "test@example.com",
+            "name", "Test User",
+            "picture", Map.of("data", Map.of("url", "https://example.com/avatar.jpg")));
+    when(authClient.getUserInfo(
+            eq("https://graph.facebook.com/me?fields=id,name,email"), anyString()))
+        .thenReturn(mockFacebookUserInfo);
   }
 
   @Test

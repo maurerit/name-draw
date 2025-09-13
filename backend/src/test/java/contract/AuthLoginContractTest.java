@@ -4,6 +4,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+import com.namedraw.client.AuthClient;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -20,7 +21,6 @@ import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
-import org.springframework.web.client.RestClient;
 
 /**
  * Contract test for GET /auth/login/{provider}
@@ -43,11 +43,11 @@ class AuthLoginContractTest {
 
   @Autowired private ClientRegistrationRepository clientRegistrationRepository;
 
-  @Autowired private RestClient restClient;
+  @Autowired private AuthClient authClient;
 
   @BeforeEach
   void setUp() {
-    Mockito.reset(clientRegistrationRepository, restClient);
+    Mockito.reset(clientRegistrationRepository, authClient);
     setupGoogleClientRegistration();
     setupFacebookClientRegistration();
   }

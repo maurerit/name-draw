@@ -81,7 +81,19 @@ public class AuthController {
 
     if (code == null || state == null) {
       log.warn("Missing required parameters in OAuth callback");
-      return ResponseEntity.badRequest().build();
+      Map<String, Object> errorResponse =
+          Map.of(
+              "error",
+              "Bad Request",
+              "message",
+              "Missing required parameters: code and state",
+              "timestamp",
+              Instant.now().toString(),
+              "path",
+              "/api/v1/auth/callback/" + provider);
+      return ResponseEntity.badRequest()
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(errorResponse);
     }
 
     try {
@@ -91,11 +103,54 @@ public class AuthController {
       Map<String, Object> response = convertAuthResponse(authResponse);
       return ResponseEntity.ok(response);
     } catch (IllegalArgumentException e) {
-      log.warn("Invalid provider in callback: {}", provider);
-      return ResponseEntity.badRequest().build();
+      log.warn("Invalid provider or authentication failed in callback: {}", provider, e);
+
+      // Check if this is an invalid provider error (happens early in the process)
+      if (e.getMessage() != null && e.getMessage().contains("Unsupported OAuth provider")) {
+        Map<String, Object> errorResponse =
+            Map.of(
+                "error",
+                "Bad Request",
+                "message",
+                "Invalid provider: " + provider,
+                "timestamp",
+                Instant.now().toString(),
+                "path",
+                "/api/v1/auth/callback/" + provider);
+        return ResponseEntity.badRequest()
+            .contentType(MediaType.APPLICATION_JSON)
+            .body(errorResponse);
+      }
+
+      // Otherwise it's an authentication failure
+      Map<String, Object> errorResponse =
+          Map.of(
+              "error",
+              "Unauthorized",
+              "message",
+              "Authentication failed: " + e.getMessage(),
+              "timestamp",
+              Instant.now().toString(),
+              "path",
+              "/api/v1/auth/callback/" + provider);
+      return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(errorResponse);
     } catch (Exception e) {
       log.error("OAuth callback processing failed for provider: {}", provider, e);
-      return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+      Map<String, Object> errorResponse =
+          Map.of(
+              "error",
+              "Unauthorized",
+              "message",
+              "OAuth callback processing failed",
+              "timestamp",
+              Instant.now().toString(),
+              "path",
+              "/api/v1/auth/callback/" + provider);
+      return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(errorResponse);
     }
   }
 
