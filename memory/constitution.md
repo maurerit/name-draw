@@ -24,7 +24,7 @@ I've seen the AI write down decisions that were made but I never made those deci
 
 ### [PRINCIPLE_5_NAME]
 Boilerplate go away
-[PRINCIPLE_3_DESCRIPTION]
+[PRINCIPLE_5_DESCRIPTION]
 Even though the AI is writing the majority of this code I still want to keep boilerplate to a minimum.  Use Lombok in all entity and data transfer classes.  We're already using Spring for a huge majority of boilerplate so let's keep it low.
 
 ## [SECTION_1_NAME]
