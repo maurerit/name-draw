@@ -78,9 +78,9 @@
 - [x] T023 [P] Contract test GET /draws/{drawId}/my-result in `backend/src/test/java/contract/DrawingMyResultContractTest.java`
 
 ### Integration Tests
-- [ ] T024 [P] Integration test draw creator flow in `backend/src/test/java/integration/DrawCreatorFlowTest.java`
-- [ ] T025 [P] Integration test participant flow in `backend/src/test/java/integration/ParticipantFlowTest.java`
-- [ ] T026 [P] Integration test edge cases (self-draws, concurrent access) in `backend/src/test/java/integration/EdgeCasesTest.java`
+- [x] T024 [P] Integration test draw creator flow in `backend/src/test/java/integration/DrawCreatorFlowTest.java`
+- [x] T025 [P] Integration test participant flow in `backend/src/test/java/integration/ParticipantFlowTest.java`
+- [x] T026 [P] Integration test edge cases (self-draws, concurrent access) in `backend/src/test/java/integration/EdgeCasesTest.java`
 
 ## Phase 3.4: Entity Models (ONLY after tests are failing)
 - [ ] T027 [P] User entity model in `backend/src/main/java/model/User.java`
