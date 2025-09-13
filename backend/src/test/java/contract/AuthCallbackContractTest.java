@@ -1,18 +1,28 @@
 package contract;
 
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.namedraw.client.AuthClient;
+import com.namedraw.repository.UserRepository;
 import java.util.Map;
+import java.util.Optional;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureWebMvc;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.oauth2.client.registration.ClientRegistration;
+import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
+import org.springframework.security.oauth2.core.AuthorizationGrantType;
+import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
@@ -28,8 +38,8 @@ import org.springframework.test.web.servlet.ResultActions;
  * authentication (AuthResponse schema) - 400: Invalid request (ErrorResponse schema) - 401:
  * Authentication failed (ErrorResponse schema)
  */
-@SpringBootTest(classes = com.namedraw.NameDrawApplication.class)
-@AutoConfigureWebMvc
+@SpringBootTest(classes = {com.namedraw.NameDrawApplication.class, ContractTestConfig.class})
+@AutoConfigureMockMvc
 @ActiveProfiles("test")
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @DisplayName("Contract Test: POST /auth/callback/{provider}")
@@ -38,6 +48,96 @@ class AuthCallbackContractTest {
   @Autowired private MockMvc mockMvc;
 
   @Autowired private ObjectMapper objectMapper;
+
+  @Autowired private UserRepository userRepository;
+
+  @Autowired private ClientRegistrationRepository clientRegistrationRepository;
+
+  @Autowired private AuthClient authClient;
+
+  @BeforeEach
+  void setUp() {
+    // Reset all mocks
+    reset(userRepository, clientRegistrationRepository, authClient);
+
+    // Mock UserRepository to return test user
+    when(userRepository.findByOauthProviderAndOauthId(anyString(), anyString()))
+        .thenReturn(Optional.of(ContractTestConfig.getTestUser()));
+    when(userRepository.save(any())).thenReturn(ContractTestConfig.getTestUser());
+
+    // Mock ClientRegistrationRepository for google
+    ClientRegistration googleRegistration =
+        ClientRegistration.withRegistrationId("google")
+            .clientId("test-google-client-id")
+            .clientSecret("test-google-client-secret")
+            .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
+            .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+            .redirectUri("http://localhost:8080/api/v1/auth/callback/google")
+            .authorizationUri("https://accounts.google.com/o/oauth2/auth")
+            .tokenUri("https://oauth2.googleapis.com/token")
+            .userInfoUri("https://www.googleapis.com/oauth2/v2/userinfo")
+            .userNameAttributeName("email")
+            .clientName("Google")
+            .build();
+    when(clientRegistrationRepository.findByRegistrationId("google"))
+        .thenReturn(googleRegistration);
+
+    // Mock ClientRegistrationRepository for facebook
+    ClientRegistration facebookRegistration =
+        ClientRegistration.withRegistrationId("facebook")
+            .clientId("test-facebook-client-id")
+            .clientSecret("test-facebook-client-secret")
+            .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_POST)
+            .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+            .redirectUri("http://localhost:8080/api/v1/auth/callback/facebook")
+            .authorizationUri("https://www.facebook.com/v12.0/dialog/oauth")
+            .tokenUri("https://graph.facebook.com/v12.0/oauth/access_token")
+            .userInfoUri("https://graph.facebook.com/me?fields=id,name,email")
+            .userNameAttributeName("email")
+            .clientName("Facebook")
+            .build();
+    when(clientRegistrationRepository.findByRegistrationId("facebook"))
+        .thenReturn(facebookRegistration);
+
+    // Mock invalid providers
+    when(clientRegistrationRepository.findByRegistrationId("twitter")).thenReturn(null);
+
+    // Mock AuthClient for successful token exchange
+    Map<String, Object> mockTokenResponse =
+        Map.of(
+            "access_token", "mock_access_token_12345",
+            "token_type", "Bearer",
+            "expires_in", 3600);
+    when(authClient.exchangeCodeForToken(
+            anyString(), anyString(), anyString(), anyString(), anyString()))
+        .thenReturn(mockTokenResponse);
+
+    // Mock AuthClient for invalid authorization codes
+    when(authClient.exchangeCodeForToken(
+            anyString(), anyString(), anyString(), eq("invalid_or_expired_auth_code"), anyString()))
+        .thenThrow(new RuntimeException("Invalid authorization code"));
+
+    // Mock AuthClient for Google user info
+    Map<String, Object> mockGoogleUserInfo =
+        Map.of(
+            "sub", "test123",
+            "email", "test@example.com",
+            "name", "Test User",
+            "picture", "https://example.com/avatar.jpg");
+    when(authClient.getUserInfo(eq("https://www.googleapis.com/oauth2/v2/userinfo"), anyString()))
+        .thenReturn(mockGoogleUserInfo);
+
+    // Mock AuthClient for Facebook user info
+    Map<String, Object> mockFacebookUserInfo =
+        Map.of(
+            "id", "test123",
+            "email", "test@example.com",
+            "name", "Test User",
+            "picture", Map.of("data", Map.of("url", "https://example.com/avatar.jpg")));
+    when(authClient.getUserInfo(
+            eq("https://graph.facebook.com/me?fields=id,name,email"), anyString()))
+        .thenReturn(mockFacebookUserInfo);
+  }
 
   @Test
   @DisplayName("Should return AuthResponse with valid Google OAuth callback")

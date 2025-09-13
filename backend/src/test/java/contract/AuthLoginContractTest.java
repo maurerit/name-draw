@@ -1,15 +1,23 @@
 package contract;
 
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+import com.namedraw.client.AuthClient;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureWebMvc;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.oauth2.client.registration.ClientRegistration;
+import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
+import org.springframework.security.oauth2.core.AuthorizationGrantType;
+import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
@@ -24,14 +32,63 @@ import org.springframework.test.web.servlet.ResultActions;
  * [facebook, google] - Responses: - 302: Redirect to OAuth provider - 400: Invalid provider
  * (ErrorResponse schema)
  */
-@SpringBootTest(classes = com.namedraw.NameDrawApplication.class)
-@AutoConfigureWebMvc
+@SpringBootTest(classes = {com.namedraw.NameDrawApplication.class, ContractTestConfig.class})
+@AutoConfigureMockMvc
 @ActiveProfiles("test")
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @DisplayName("Contract Test: GET /auth/login/{provider}")
 class AuthLoginContractTest {
 
   @Autowired private MockMvc mockMvc;
+
+  @Autowired private ClientRegistrationRepository clientRegistrationRepository;
+
+  @Autowired private AuthClient authClient;
+
+  @BeforeEach
+  void setUp() {
+    Mockito.reset(clientRegistrationRepository, authClient);
+    setupGoogleClientRegistration();
+    setupFacebookClientRegistration();
+  }
+
+  private void setupGoogleClientRegistration() {
+    ClientRegistration googleRegistration =
+        ClientRegistration.withRegistrationId("google")
+            .clientId("test-google-client-id")
+            .clientSecret("test-google-client-secret")
+            .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
+            .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+            .redirectUri("{baseUrl}/api/v1/auth/callback/{registrationId}")
+            .scope("profile", "email")
+            .authorizationUri("https://accounts.google.com/o/oauth2/v2/auth")
+            .tokenUri("https://oauth2.googleapis.com/token")
+            .userInfoUri("https://www.googleapis.com/oauth2/v2/userinfo")
+            .clientName("Google")
+            .build();
+
+    when(clientRegistrationRepository.findByRegistrationId("google"))
+        .thenReturn(googleRegistration);
+  }
+
+  private void setupFacebookClientRegistration() {
+    ClientRegistration facebookRegistration =
+        ClientRegistration.withRegistrationId("facebook")
+            .clientId("test-facebook-client-id")
+            .clientSecret("test-facebook-client-secret")
+            .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_POST)
+            .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+            .redirectUri("{baseUrl}/api/v1/auth/callback/{registrationId}")
+            .scope("email", "public_profile")
+            .authorizationUri("https://www.facebook.com/v18.0/dialog/oauth")
+            .tokenUri("https://graph.facebook.com/v18.0/oauth/access_token")
+            .userInfoUri("https://graph.facebook.com/v18.0/me?fields=id,name,email")
+            .clientName("Facebook")
+            .build();
+
+    when(clientRegistrationRepository.findByRegistrationId("facebook"))
+        .thenReturn(facebookRegistration);
+  }
 
   @Test
   @DisplayName("Should redirect to Google OAuth provider when provider is 'google'")
