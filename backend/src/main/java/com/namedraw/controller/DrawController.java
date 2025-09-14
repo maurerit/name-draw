@@ -77,19 +77,26 @@ public class DrawController {
       log.warn("List draws attempted with invalid or missing JWT token");
       return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
           .contentType(MediaType.APPLICATION_JSON)
-          .body(createErrorResponse("Unauthorized", "Invalid or missing JWT token", "/api/v1/draws"));
+          .body(
+              createErrorResponse("Unauthorized", "Invalid or missing JWT token", "/api/v1/draws"));
     }
 
     try {
       UUID userId = UUID.fromString(jwt.getSubject());
-      log.debug("Listing draws for user ID: {}, state: {}, page: {}, size: {}", userId, state, page, size);
+      log.debug(
+          "Listing draws for user ID: {}, state: {}, page: {}, size: {}",
+          userId,
+          state,
+          page,
+          size);
 
       Optional<User> userOpt = userService.findById(userId);
       if (userOpt.isEmpty()) {
         log.warn("User not found for ID: {}", userId);
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
             .contentType(MediaType.APPLICATION_JSON)
-            .body(createErrorResponse("Unauthorized", "User not found or inactive", "/api/v1/draws"));
+            .body(
+                createErrorResponse("Unauthorized", "User not found or inactive", "/api/v1/draws"));
       }
 
       // Limit page size to 100
@@ -99,22 +106,21 @@ public class DrawController {
 
       User currentUser = userOpt.get();
       List<Draw> allDraws = drawService.findAllDraws();
-      
+
       // Filter by state if specified
       List<Draw> filteredDraws = allDraws;
       if (state != null) {
-        filteredDraws = allDraws.stream()
-            .filter(draw -> draw.getState() == state)
-            .toList();
+        filteredDraws = allDraws.stream().filter(draw -> draw.getState() == state).toList();
       }
-      
+
       // Apply pagination manually
       int start = Math.min(page * size, filteredDraws.size());
       int end = Math.min(start + size, filteredDraws.size());
       List<Draw> pagedDraws = filteredDraws.subList(start, end);
-      
-      DrawPageResponse response = createDrawPageResponse(pagedDraws, filteredDraws.size(), page, size, currentUser);
-      
+
+      DrawPageResponse response =
+          createDrawPageResponse(pagedDraws, filteredDraws.size(), page, size, currentUser);
+
       log.debug("Successfully retrieved {} draws for user ID: {}", filteredDraws.size(), userId);
       return ResponseEntity.ok(response);
 
@@ -127,7 +133,9 @@ public class DrawController {
       log.error("Error listing draws", e);
       return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
           .contentType(MediaType.APPLICATION_JSON)
-          .body(createErrorResponse("Internal Server Error", "Failed to retrieve draws", "/api/v1/draws"));
+          .body(
+              createErrorResponse(
+                  "Internal Server Error", "Failed to retrieve draws", "/api/v1/draws"));
     }
   }
 
@@ -140,14 +148,14 @@ public class DrawController {
    */
   @PostMapping
   public ResponseEntity<?> createDraw(
-      @AuthenticationPrincipal Jwt jwt,
-      @Valid @RequestBody CreateDrawRequest request) {
+      @AuthenticationPrincipal Jwt jwt, @Valid @RequestBody CreateDrawRequest request) {
 
     if (jwt == null) {
       log.warn("Create draw attempted with invalid or missing JWT token");
       return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
           .contentType(MediaType.APPLICATION_JSON)
-          .body(createErrorResponse("Unauthorized", "Invalid or missing JWT token", "/api/v1/draws"));
+          .body(
+              createErrorResponse("Unauthorized", "Invalid or missing JWT token", "/api/v1/draws"));
     }
 
     try {
@@ -159,19 +167,22 @@ public class DrawController {
         log.warn("User not found for ID: {}", userId);
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
             .contentType(MediaType.APPLICATION_JSON)
-            .body(createErrorResponse("Unauthorized", "User not found or inactive", "/api/v1/draws"));
+            .body(
+                createErrorResponse("Unauthorized", "User not found or inactive", "/api/v1/draws"));
       }
 
       User creator = userOpt.get();
-      Draw createdDraw = drawService.createDraw(
-          creator,
-          request.getTitle(),
-          request.getDescription(),
-          request.getDrawDate(),
-          request.getMaxParticipants());
+      Draw createdDraw =
+          drawService.createDraw(
+              creator,
+              request.getTitle(),
+              request.getDescription(),
+              request.getDrawDate(),
+              request.getMaxParticipants());
 
       DrawResponse response = convertDrawToResponse(createdDraw, creator);
-      log.info("Successfully created draw with ID: {} for user ID: {}", createdDraw.getId(), userId);
+      log.info(
+          "Successfully created draw with ID: {} for user ID: {}", createdDraw.getId(), userId);
       return ResponseEntity.status(HttpStatus.CREATED).body(response);
 
     } catch (IllegalArgumentException e) {
@@ -183,7 +194,9 @@ public class DrawController {
       log.error("Error creating draw", e);
       return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
           .contentType(MediaType.APPLICATION_JSON)
-          .body(createErrorResponse("Internal Server Error", "Failed to create draw", "/api/v1/draws"));
+          .body(
+              createErrorResponse(
+                  "Internal Server Error", "Failed to create draw", "/api/v1/draws"));
     }
   }
 
@@ -196,14 +209,15 @@ public class DrawController {
    */
   @GetMapping("/{drawId}")
   public ResponseEntity<?> getDrawById(
-      @AuthenticationPrincipal Jwt jwt,
-      @PathVariable UUID drawId) {
+      @AuthenticationPrincipal Jwt jwt, @PathVariable UUID drawId) {
 
     if (jwt == null) {
       log.warn("Get draw attempted with invalid or missing JWT token");
       return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
           .contentType(MediaType.APPLICATION_JSON)
-          .body(createErrorResponse("Unauthorized", "Invalid or missing JWT token", "/api/v1/draws/" + drawId));
+          .body(
+              createErrorResponse(
+                  "Unauthorized", "Invalid or missing JWT token", "/api/v1/draws/" + drawId));
     }
 
     try {
@@ -215,7 +229,9 @@ public class DrawController {
         log.warn("User not found for ID: {}", userId);
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
             .contentType(MediaType.APPLICATION_JSON)
-            .body(createErrorResponse("Unauthorized", "User not found or inactive", "/api/v1/draws/" + drawId));
+            .body(
+                createErrorResponse(
+                    "Unauthorized", "User not found or inactive", "/api/v1/draws/" + drawId));
       }
 
       Optional<Draw> drawOpt = drawService.findDrawById(drawId);
@@ -229,7 +245,7 @@ public class DrawController {
       User currentUser = userOpt.get();
       Draw draw = drawOpt.get();
       DrawResponse response = convertDrawToResponse(draw, currentUser);
-      
+
       log.debug("Successfully retrieved draw ID: {} for user ID: {}", drawId, userId);
       return ResponseEntity.ok(response);
 
@@ -237,12 +253,16 @@ public class DrawController {
       log.warn("Invalid user ID in JWT token: {}", jwt.getSubject(), e);
       return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
           .contentType(MediaType.APPLICATION_JSON)
-          .body(createErrorResponse("Unauthorized", "Invalid user ID in token", "/api/v1/draws/" + drawId));
+          .body(
+              createErrorResponse(
+                  "Unauthorized", "Invalid user ID in token", "/api/v1/draws/" + drawId));
     } catch (Exception e) {
       log.error("Error retrieving draw ID: {}", drawId, e);
       return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
           .contentType(MediaType.APPLICATION_JSON)
-          .body(createErrorResponse("Internal Server Error", "Failed to retrieve draw", "/api/v1/draws/" + drawId));
+          .body(
+              createErrorResponse(
+                  "Internal Server Error", "Failed to retrieve draw", "/api/v1/draws/" + drawId));
     }
   }
 
@@ -264,7 +284,9 @@ public class DrawController {
       log.warn("Update draw attempted with invalid or missing JWT token");
       return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
           .contentType(MediaType.APPLICATION_JSON)
-          .body(createErrorResponse("Unauthorized", "Invalid or missing JWT token", "/api/v1/draws/" + drawId));
+          .body(
+              createErrorResponse(
+                  "Unauthorized", "Invalid or missing JWT token", "/api/v1/draws/" + drawId));
     }
 
     try {
@@ -276,7 +298,9 @@ public class DrawController {
         log.warn("User not found for ID: {}", userId);
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
             .contentType(MediaType.APPLICATION_JSON)
-            .body(createErrorResponse("Unauthorized", "User not found or inactive", "/api/v1/draws/" + drawId));
+            .body(
+                createErrorResponse(
+                    "Unauthorized", "User not found or inactive", "/api/v1/draws/" + drawId));
       }
 
       Optional<Draw> drawOpt = drawService.findDrawById(drawId);
@@ -292,10 +316,15 @@ public class DrawController {
 
       // Check if user is the creator
       if (!draw.getCreator().getId().equals(currentUser.getId())) {
-        log.warn("User ID: {} attempted to update draw ID: {} but is not the creator", userId, drawId);
+        log.warn(
+            "User ID: {} attempted to update draw ID: {} but is not the creator", userId, drawId);
         return ResponseEntity.status(HttpStatus.FORBIDDEN)
             .contentType(MediaType.APPLICATION_JSON)
-            .body(createErrorResponse("Forbidden", "Only the draw creator can update the draw", "/api/v1/draws/" + drawId));
+            .body(
+                createErrorResponse(
+                    "Forbidden",
+                    "Only the draw creator can update the draw",
+                    "/api/v1/draws/" + drawId));
       }
 
       // Check if draw is in JOINING state
@@ -303,12 +332,23 @@ public class DrawController {
         log.warn("Attempted to update draw ID: {} in state: {}", drawId, draw.getState());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
             .contentType(MediaType.APPLICATION_JSON)
-            .body(createErrorResponse("Bad Request", "Draw can only be updated in JOINING state", "/api/v1/draws/" + drawId));
+            .body(
+                createErrorResponse(
+                    "Bad Request",
+                    "Draw can only be updated in JOINING state",
+                    "/api/v1/draws/" + drawId));
       }
 
-      Draw updatedDraw = drawService.updateDraw(drawId, currentUser, request.getTitle(), request.getDescription(), request.getDrawDate(), request.getMaxParticipants());
+      Draw updatedDraw =
+          drawService.updateDraw(
+              drawId,
+              currentUser,
+              request.getTitle(),
+              request.getDescription(),
+              request.getDrawDate(),
+              request.getMaxParticipants());
       DrawResponse response = convertDrawToResponse(updatedDraw, currentUser);
-      
+
       log.info("Successfully updated draw ID: {} for user ID: {}", drawId, userId);
       return ResponseEntity.ok(response);
 
@@ -321,7 +361,9 @@ public class DrawController {
       log.error("Error updating draw ID: {}", drawId, e);
       return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
           .contentType(MediaType.APPLICATION_JSON)
-          .body(createErrorResponse("Internal Server Error", "Failed to update draw", "/api/v1/draws/" + drawId));
+          .body(
+              createErrorResponse(
+                  "Internal Server Error", "Failed to update draw", "/api/v1/draws/" + drawId));
     }
   }
 
@@ -333,15 +375,17 @@ public class DrawController {
    * @return Participation confirmation
    */
   @PostMapping("/{drawId}/join")
-  public ResponseEntity<?> joinDraw(
-      @AuthenticationPrincipal Jwt jwt,
-      @PathVariable UUID drawId) {
+  public ResponseEntity<?> joinDraw(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID drawId) {
 
     if (jwt == null) {
       log.warn("Join draw attempted with invalid or missing JWT token");
       return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
           .contentType(MediaType.APPLICATION_JSON)
-          .body(createErrorResponse("Unauthorized", "Invalid or missing JWT token", "/api/v1/draws/" + drawId + "/join"));
+          .body(
+              createErrorResponse(
+                  "Unauthorized",
+                  "Invalid or missing JWT token",
+                  "/api/v1/draws/" + drawId + "/join"));
     }
 
     try {
@@ -353,7 +397,11 @@ public class DrawController {
         log.warn("User not found for ID: {}", userId);
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
             .contentType(MediaType.APPLICATION_JSON)
-            .body(createErrorResponse("Unauthorized", "User not found or inactive", "/api/v1/draws/" + drawId + "/join"));
+            .body(
+                createErrorResponse(
+                    "Unauthorized",
+                    "User not found or inactive",
+                    "/api/v1/draws/" + drawId + "/join"));
       }
 
       Optional<Draw> drawOpt = drawService.findDrawById(drawId);
@@ -361,14 +409,16 @@ public class DrawController {
         log.warn("Draw not found for ID: {}", drawId);
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
             .contentType(MediaType.APPLICATION_JSON)
-            .body(createErrorResponse("Not Found", "Draw not found", "/api/v1/draws/" + drawId + "/join"));
+            .body(
+                createErrorResponse(
+                    "Not Found", "Draw not found", "/api/v1/draws/" + drawId + "/join"));
       }
 
       User participant = userOpt.get();
 
       Participation participation = drawService.joinDraw(drawId, participant);
       ParticipationResponse response = convertParticipationToResponse(participation);
-      
+
       log.info("Successfully joined user ID: {} to draw ID: {}", userId, drawId);
       return ResponseEntity.ok(response);
 
@@ -376,12 +426,18 @@ public class DrawController {
       log.warn("Invalid request for join draw: {}", e.getMessage());
       return ResponseEntity.status(HttpStatus.BAD_REQUEST)
           .contentType(MediaType.APPLICATION_JSON)
-          .body(createErrorResponse("Bad Request", e.getMessage(), "/api/v1/draws/" + drawId + "/join"));
+          .body(
+              createErrorResponse(
+                  "Bad Request", e.getMessage(), "/api/v1/draws/" + drawId + "/join"));
     } catch (Exception e) {
       log.error("Error joining draw ID: {}", drawId, e);
       return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
           .contentType(MediaType.APPLICATION_JSON)
-          .body(createErrorResponse("Internal Server Error", "Failed to join draw", "/api/v1/draws/" + drawId + "/join"));
+          .body(
+              createErrorResponse(
+                  "Internal Server Error",
+                  "Failed to join draw",
+                  "/api/v1/draws/" + drawId + "/join"));
     }
   }
 
@@ -393,15 +449,17 @@ public class DrawController {
    * @return Updated draw in OPEN state
    */
   @PostMapping("/{drawId}/open")
-  public ResponseEntity<?> openDraw(
-      @AuthenticationPrincipal Jwt jwt,
-      @PathVariable UUID drawId) {
+  public ResponseEntity<?> openDraw(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID drawId) {
 
     if (jwt == null) {
       log.warn("Open draw attempted with invalid or missing JWT token");
       return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
           .contentType(MediaType.APPLICATION_JSON)
-          .body(createErrorResponse("Unauthorized", "Invalid or missing JWT token", "/api/v1/draws/" + drawId + "/open"));
+          .body(
+              createErrorResponse(
+                  "Unauthorized",
+                  "Invalid or missing JWT token",
+                  "/api/v1/draws/" + drawId + "/open"));
     }
 
     try {
@@ -413,7 +471,11 @@ public class DrawController {
         log.warn("User not found for ID: {}", userId);
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
             .contentType(MediaType.APPLICATION_JSON)
-            .body(createErrorResponse("Unauthorized", "User not found or inactive", "/api/v1/draws/" + drawId + "/open"));
+            .body(
+                createErrorResponse(
+                    "Unauthorized",
+                    "User not found or inactive",
+                    "/api/v1/draws/" + drawId + "/open"));
       }
 
       Optional<Draw> drawOpt = drawService.findDrawById(drawId);
@@ -421,7 +483,9 @@ public class DrawController {
         log.warn("Draw not found for ID: {}", drawId);
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
             .contentType(MediaType.APPLICATION_JSON)
-            .body(createErrorResponse("Not Found", "Draw not found", "/api/v1/draws/" + drawId + "/open"));
+            .body(
+                createErrorResponse(
+                    "Not Found", "Draw not found", "/api/v1/draws/" + drawId + "/open"));
       }
 
       User currentUser = userOpt.get();
@@ -429,15 +493,20 @@ public class DrawController {
 
       // Check if user is the creator
       if (!draw.getCreator().getId().equals(currentUser.getId())) {
-        log.warn("User ID: {} attempted to open draw ID: {} but is not the creator", userId, drawId);
+        log.warn(
+            "User ID: {} attempted to open draw ID: {} but is not the creator", userId, drawId);
         return ResponseEntity.status(HttpStatus.FORBIDDEN)
             .contentType(MediaType.APPLICATION_JSON)
-            .body(createErrorResponse("Forbidden", "Only the draw creator can open the draw", "/api/v1/draws/" + drawId + "/open"));
+            .body(
+                createErrorResponse(
+                    "Forbidden",
+                    "Only the draw creator can open the draw",
+                    "/api/v1/draws/" + drawId + "/open"));
       }
 
       Draw openedDraw = drawService.openDrawForDrawing(drawId, currentUser);
       DrawResponse response = convertDrawToResponse(openedDraw, currentUser);
-      
+
       log.info("Successfully opened draw ID: {} by user ID: {}", drawId, userId);
       return ResponseEntity.ok(response);
 
@@ -445,12 +514,18 @@ public class DrawController {
       log.warn("Invalid request for open draw: {}", e.getMessage());
       return ResponseEntity.status(HttpStatus.BAD_REQUEST)
           .contentType(MediaType.APPLICATION_JSON)
-          .body(createErrorResponse("Bad Request", e.getMessage(), "/api/v1/draws/" + drawId + "/open"));
+          .body(
+              createErrorResponse(
+                  "Bad Request", e.getMessage(), "/api/v1/draws/" + drawId + "/open"));
     } catch (Exception e) {
       log.error("Error opening draw ID: {}", drawId, e);
       return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
           .contentType(MediaType.APPLICATION_JSON)
-          .body(createErrorResponse("Internal Server Error", "Failed to open draw", "/api/v1/draws/" + drawId + "/open"));
+          .body(
+              createErrorResponse(
+                  "Internal Server Error",
+                  "Failed to open draw",
+                  "/api/v1/draws/" + drawId + "/open"));
     }
   }
 
@@ -510,7 +585,7 @@ public class DrawController {
     ParticipationResponse response = new ParticipationResponse();
     response.setId(participation.getId());
     response.setJoinedAt(participation.getJoinedAt());
-    
+
     // Convert draw (without participants to avoid circular reference)
     DrawResponse drawResponse = new DrawResponse();
     Draw draw = participation.getDraw();
@@ -528,19 +603,20 @@ public class DrawController {
     drawResponse.setParticipants(new ArrayList<>());
     drawResponse.setCanJoin(false);
     drawResponse.setCanDraw(false);
-    
+
     response.setDraw(drawResponse);
     return response;
   }
 
-  private DrawPageResponse createDrawPageResponse(List<Draw> draws, int totalElements, int page, int size, User currentUser) {
+  private DrawPageResponse createDrawPageResponse(
+      List<Draw> draws, int totalElements, int page, int size, User currentUser) {
     DrawPageResponse response = new DrawPageResponse();
-    
+
     List<DrawResponse> drawResponses = new ArrayList<>();
     for (Draw draw : draws) {
       drawResponses.add(convertDrawToResponse(draw, currentUser));
     }
-    
+
     response.setContent(drawResponses);
     response.setTotalElements((long) totalElements);
     response.setTotalPages((int) Math.ceil((double) totalElements / size));
@@ -548,7 +624,7 @@ public class DrawController {
     response.setNumber(page);
     response.setFirst(page == 0);
     response.setLast((page + 1) * size >= totalElements);
-    
+
     return response;
   }
 
@@ -560,11 +636,11 @@ public class DrawController {
     if (draw.getState() != DrawState.JOINING) {
       return false;
     }
-    
+
     if (draw.getParticipantCount() >= draw.getMaxParticipants()) {
       return false;
     }
-    
+
     // Check if user is already a participant
     if (draw.getParticipations() != null) {
       for (Participation participation : draw.getParticipations()) {
@@ -573,7 +649,7 @@ public class DrawController {
         }
       }
     }
-    
+
     return true;
   }
 
@@ -585,7 +661,7 @@ public class DrawController {
     if (draw.getState() != DrawState.OPEN) {
       return false;
     }
-    
+
     // Check if user is a participant
     boolean isParticipant = false;
     if (draw.getParticipations() != null) {
@@ -596,11 +672,11 @@ public class DrawController {
         }
       }
     }
-    
+
     if (!isParticipant) {
       return false;
     }
-    
+
     // This would need to check if user has already drawn - requires DrawQueue or DrawnName service
     // For now, assume they can draw (this logic belongs in DrawingService)
     return true;

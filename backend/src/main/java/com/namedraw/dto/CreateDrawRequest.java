@@ -13,9 +13,9 @@ import lombok.NoArgsConstructor;
 /**
  * Request DTO for creating a new draw.
  *
- * <p>Validates input according to business rules: - Title: 1-100 characters, required - Description:
- * max 500 characters, optional - Draw date: must be in the future, required - Max participants:
- * 2-30, defaults to 30 if not specified
+ * <p>Validates input according to business rules: - Title: 1-100 characters, required -
+ * Description: max 500 characters, optional - Draw date: must be in the future, required - Max
+ * participants: 2-30, defaults to 30 if not specified
  */
 @Data
 @NoArgsConstructor
