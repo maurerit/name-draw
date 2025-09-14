@@ -35,8 +35,7 @@ public class DrawsGetContractTest {
   @Test
   public void getDraw_withValidIdAndAuth_shouldReturn200WithDrawJson() throws Exception {
     // Given: Valid JWT token and existing draw ID
-    String validJwtToken =
-        "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
+    String validJwtToken = "Bearer " + TestTokenGenerator.generateValidAccessToken();
     String validDrawId = "123e4567-e89b-12d3-a456-426614174000";
 
     // When: GET /api/v1/draws/{drawId}

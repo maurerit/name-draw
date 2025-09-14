@@ -36,8 +36,7 @@ public class DrawsListContractTest {
   @Test
   public void getDraws_withValidToken_shouldReturn200WithDrawPage() throws Exception {
     // Given: Valid JWT token for authenticated user
-    String validJwtToken =
-        "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
+    String validJwtToken = "Bearer " + TestTokenGenerator.generateValidAccessToken();
 
     // When: GET /api/v1/draws
     // Then: Should return 200 with DrawPage JSON
@@ -63,8 +62,7 @@ public class DrawsListContractTest {
   @Test
   public void getDraws_withStateFilter_shouldReturn200WithFilteredResults() throws Exception {
     // Given: Valid JWT token and state filter
-    String validJwtToken =
-        "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
+    String validJwtToken = "Bearer " + TestTokenGenerator.generateValidAccessToken();
 
     // When: GET /api/v1/draws?state=JOINING
     // Then: Should return 200 with DrawPage JSON
@@ -83,8 +81,7 @@ public class DrawsListContractTest {
   @Test
   public void getDraws_withPaginationParams_shouldReturn200WithPaginatedResults() throws Exception {
     // Given: Valid JWT token and pagination parameters
-    String validJwtToken =
-        "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
+    String validJwtToken = "Bearer " + TestTokenGenerator.generateValidAccessToken();
 
     // When: GET /api/v1/draws?page=0&size=10
     // Then: Should return 200 with paginated DrawPage JSON
@@ -132,8 +129,7 @@ public class DrawsListContractTest {
   @Test
   public void getDraws_withInvalidStateParam_shouldReturn400() throws Exception {
     // Given: Valid JWT token and invalid state parameter
-    String validJwtToken =
-        "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
+    String validJwtToken = "Bearer " + TestTokenGenerator.generateValidAccessToken();
 
     // When: GET /api/v1/draws?state=INVALID_STATE
     // Then: Should return 400 Bad Request
@@ -152,8 +148,7 @@ public class DrawsListContractTest {
   @Test
   public void getDraws_withExcessiveSizeParam_shouldReturn400() throws Exception {
     // Given: Valid JWT token and excessive size parameter (>100)
-    String validJwtToken =
-        "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
+    String validJwtToken = "Bearer " + TestTokenGenerator.generateValidAccessToken();
 
     // When: GET /api/v1/draws?size=200 (exceeds maximum of 100)
     // Then: Should return 400 Bad Request
