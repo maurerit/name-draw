@@ -122,8 +122,11 @@ public class DrawingController {
       }
       Draw draw = drawOpt.get();
 
-      // Results are visible if draw is archived; otherwise only to participants
-      if (draw.getState() != DrawState.ARCHIVED && !drawService.isUserParticipant(drawId, user)) {
+      // Results are visible if draw is archived; otherwise to participants or the creator
+      boolean isCreator = draw.getCreator().getId().equals(user.getId());
+      if (draw.getState() != DrawState.ARCHIVED
+          && !isCreator
+          && !drawService.isUserParticipant(drawId, user)) {
         return forbidden("/api/v1/draws/" + drawId + "/results", "Not authorized to view results");
       }
 

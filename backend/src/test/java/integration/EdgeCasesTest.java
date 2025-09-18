@@ -7,13 +7,17 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.namedraw.model.User;
+import com.namedraw.repository.UserRepository;
+import contract.TestTokenGenerator;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureWebMvc;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
@@ -35,8 +39,8 @@ import org.springframework.test.web.servlet.MvcResult;
  * participant draws auto-transition to OPEN state - System maintains data consistency under
  * concurrent access - Edge cases fail gracefully with appropriate error messages
  */
-@SpringBootTest(classes = com.namedraw.NameDrawApplication.class)
-@AutoConfigureWebMvc
+@SpringBootTest(classes = {com.namedraw.NameDrawApplication.class, IntegrationTestConfig.class})
+@AutoConfigureMockMvc
 @ActiveProfiles("test")
 public class EdgeCasesTest {
 
@@ -48,21 +52,68 @@ public class EdgeCasesTest {
   private String participant2JwtToken;
   private String participant3JwtToken;
   private String participant4JwtToken;
+  @Autowired private UserRepository userRepository;
+
+  private UUID creatorId;
+  private UUID participant1Id;
+  private UUID participant2Id;
+  private UUID participant3Id;
+  private UUID participant4Id;
+
+  private String futureDate() {
+    return java.time.LocalDate.now().plusDays(30).toString();
+  }
 
   @BeforeEach
   public void setUp() {
-    // Mock JWT tokens for different users
-    // In real implementation, these would be generated through OAuth flow
+    creatorId = UUID.fromString("11111111-1111-1111-1111-111111111111");
+    participant1Id = UUID.fromString("22222222-2222-2222-2222-222222222222");
+    participant2Id = UUID.fromString("33333333-3333-3333-3333-333333333333");
+    participant3Id = UUID.fromString("44444444-4444-4444-4444-444444444444");
+    participant4Id = UUID.fromString("55555555-5555-5555-5555-555555555555");
+
+    ensureUser(creatorId, "google", "google_123", "John Creator", "creator@example.com");
+    ensureUser(
+        participant1Id, "facebook", "facebook_456", "Alice Participant", "alice@example.com");
+    ensureUser(participant2Id, "google", "google_789", "Bob Participant", "bob@example.com");
+    ensureUser(
+        participant3Id, "google", "google_654", "Charlie Participant", "charlie@example.com");
+    ensureUser(
+        participant4Id, "facebook", "facebook_321", "David Participant", "david@example.com");
+
     creatorJwtToken =
-        "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjcmVhdG9yLXVzZXItaWQiLCJuYW1lIjoiSm9obiBDcmVhdG9yIiwiaWF0IjoxNTE2MjM5MDIyfQ.creator-jwt-token";
+        "Bearer " + TestTokenGenerator.generateValidAccessTokenForUser(creatorId, "John Creator");
     participant1JwtToken =
-        "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJwYXJ0aWNpcGFudC0xLWlkIiwibmFtZSI6IkFsaWNlIFBhcnRpY2lwYW50IiwiaWF0IjoxNTE2MjM5MDIyfQ.participant1-jwt-token";
+        "Bearer "
+            + TestTokenGenerator.generateValidAccessTokenForUser(
+                participant1Id, "Alice Participant");
     participant2JwtToken =
-        "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJwYXJ0aWNpcGFudC0yLWlkIiwibmFtZSI6IkJvYiBQYXJ0aWNpcGFudCIsImlhdCI6MTUxNjIzOTAyMn0.participant2-jwt-token";
+        "Bearer "
+            + TestTokenGenerator.generateValidAccessTokenForUser(participant2Id, "Bob Participant");
     participant3JwtToken =
-        "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJwYXJ0aWNpcGFudC0zLWlkIiwibmFtZSI6IkNoYXJsaWUgUGFydGljaXBhbnQiLCJpYXQiOjE1MTYyMzkwMjJ9.participant3-jwt-token";
+        "Bearer "
+            + TestTokenGenerator.generateValidAccessTokenForUser(
+                participant3Id, "Charlie Participant");
     participant4JwtToken =
-        "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJwYXJ0aWNpcGFudC00LWlkIiwibmFtZSI6IkRhdmlkIFBhcnRpY2lwYW50IiwiaWF0IjoxNTE2MjM5MDIyfQ.participant4-jwt-token";
+        "Bearer "
+            + TestTokenGenerator.generateValidAccessTokenForUser(
+                participant4Id, "David Participant");
+  }
+
+  private void ensureUser(UUID id, String provider, String oauthId, String name, String email) {
+    userRepository
+        .findById(id)
+        .orElseGet(
+            () ->
+                userRepository.save(
+                    User.builder()
+                        .id(id)
+                        .oauthProvider(provider)
+                        .oauthId(oauthId + "_it")
+                        .name(name)
+                        .email(email)
+                        .isActive(true)
+                        .build()));
   }
 
   @Test
@@ -74,7 +125,9 @@ public class EdgeCasesTest {
         "{"
             + "\"title\": \"Self-Draw Prevention Test\","
             + "\"description\": \"Testing automatic re-draw on self-draw\","
-            + "\"drawDate\": \"2024-12-15\","
+            + "\"drawDate\": \""
+            + futureDate()
+            + "\","
             + "\"maxParticipants\": 10"
             + "}";
 
@@ -139,10 +192,12 @@ public class EdgeCasesTest {
     String drawnUser2Id = draw2ResponseNode.get("drawnUser").get("id").asText();
 
     // Verify participant 1 drew participant 2
-    assertEquals("participant-2-id", drawnUser1Id, "Participant 1 should draw participant 2");
+    assertEquals(
+        participant2Id.toString(), drawnUser1Id, "Participant 1 should draw participant 2");
 
     // Verify participant 2 drew participant 1
-    assertEquals("participant-1-id", drawnUser2Id, "Participant 2 should draw participant 1");
+    assertEquals(
+        participant1Id.toString(), drawnUser2Id, "Participant 2 should draw participant 1");
   }
 
   @Test
@@ -154,7 +209,9 @@ public class EdgeCasesTest {
         "{"
             + "\"title\": \"Concurrent Access Test\","
             + "\"description\": \"Testing thread safety during concurrent drawing\","
-            + "\"drawDate\": \"2024-12-15\","
+            + "\"drawDate\": \""
+            + futureDate()
+            + "\","
             + "\"maxParticipants\": 10"
             + "}";
 
@@ -260,7 +317,9 @@ public class EdgeCasesTest {
         "{"
             + "\"title\": \"Single Participant Test\","
             + "\"description\": \"Testing single participant edge case\","
-            + "\"drawDate\": \"2024-12-15\","
+            + "\"drawDate\": \""
+            + futureDate()
+            + "\","
             + "\"maxParticipants\": 10"
             + "}";
 
@@ -288,7 +347,10 @@ public class EdgeCasesTest {
     mockMvc
         .perform(post("/api/v1/draws/" + drawId + "/open").header("Authorization", creatorJwtToken))
         .andExpect(status().isBadRequest())
-        .andExpect(jsonPath("$.error").value("Cannot open draw with only one participant"));
+        .andExpect(jsonPath("$.error").value("Bad Request"))
+        .andExpect(
+            jsonPath("$.message")
+                .value("Draw cannot be opened - requires at least 2 participants"));
 
     // Verify draw remains in JOINING state
     mockMvc
@@ -307,7 +369,9 @@ public class EdgeCasesTest {
         "{"
             + "\"title\": \"Max Participants Test\","
             + "\"description\": \"Testing maximum participant enforcement\","
-            + "\"drawDate\": \"2024-12-15\","
+            + "\"drawDate\": \""
+            + futureDate()
+            + "\","
             + "\"maxParticipants\": 2"
             + "}";
 
@@ -348,7 +412,8 @@ public class EdgeCasesTest {
         .perform(
             post("/api/v1/draws/" + drawId + "/join").header("Authorization", participant3JwtToken))
         .andExpect(status().isBadRequest())
-        .andExpect(jsonPath("$.error").value("Cannot join draw that is not in JOINING state"));
+        .andExpect(jsonPath("$.error").value("Bad Request"))
+        .andExpect(jsonPath("$.message").value("Cannot join draw - draw is not in JOINING state"));
   }
 
   @Test
@@ -360,7 +425,9 @@ public class EdgeCasesTest {
         "{"
             + "\"title\": \"Double Draw Prevention Test\","
             + "\"description\": \"Testing prevention of multiple draws per participant\","
-            + "\"drawDate\": \"2024-12-15\","
+            + "\"drawDate\": \""
+            + futureDate()
+            + "\","
             + "\"maxParticipants\": 10"
             + "}";
 
@@ -407,7 +474,8 @@ public class EdgeCasesTest {
         .perform(
             post("/api/v1/draws/" + drawId + "/draw").header("Authorization", participant1JwtToken))
         .andExpect(status().isBadRequest())
-        .andExpect(jsonPath("$.error").value("User has already drawn a name in this draw"));
+        .andExpect(jsonPath("$.error").value("Bad Request"))
+        .andExpect(jsonPath("$.message").value("User has already drawn from this draw"));
   }
 
   @Test
@@ -419,7 +487,9 @@ public class EdgeCasesTest {
         "{"
             + "\"title\": \"Draw Before Open Test\","
             + "\"description\": \"Testing draw rejection when draw not open\","
-            + "\"drawDate\": \"2024-12-15\","
+            + "\"drawDate\": \""
+            + futureDate()
+            + "\","
             + "\"maxParticipants\": 10"
             + "}";
 
@@ -453,7 +523,8 @@ public class EdgeCasesTest {
         .perform(
             post("/api/v1/draws/" + drawId + "/draw").header("Authorization", participant1JwtToken))
         .andExpect(status().isBadRequest())
-        .andExpect(jsonPath("$.error").value("Cannot draw from a draw that is not open"));
+        .andExpect(jsonPath("$.error").value("Bad Request"))
+        .andExpect(jsonPath("$.message").value("Draw is not open for drawing"));
   }
 
   @Test
@@ -465,7 +536,9 @@ public class EdgeCasesTest {
         "{"
             + "\"title\": \"Non-Participant Test\","
             + "\"description\": \"Testing non-participant draw rejection\","
-            + "\"drawDate\": \"2024-12-15\","
+            + "\"drawDate\": \""
+            + futureDate()
+            + "\","
             + "\"maxParticipants\": 10"
             + "}";
 
@@ -504,7 +577,8 @@ public class EdgeCasesTest {
         .perform(
             post("/api/v1/draws/" + drawId + "/draw").header("Authorization", participant3JwtToken))
         .andExpect(status().isForbidden())
-        .andExpect(jsonPath("$.error").value("User is not a participant in this draw"));
+        .andExpect(jsonPath("$.error").value("Forbidden"))
+        .andExpect(jsonPath("$.message").value("User is not a participant"));
   }
 
   @Test
@@ -516,7 +590,9 @@ public class EdgeCasesTest {
         "{"
             + "\"title\": \"Concurrent Joining Test\","
             + "\"description\": \"Testing concurrent joining race conditions\","
-            + "\"drawDate\": \"2024-12-15\","
+            + "\"drawDate\": \""
+            + futureDate()
+            + "\","
             + "\"maxParticipants\": 2"
             + "}";
 

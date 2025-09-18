@@ -4,7 +4,6 @@ import com.namedraw.model.Draw;
 import com.namedraw.model.Draw.DrawState;
 import com.namedraw.model.Participation;
 import com.namedraw.model.User;
-import com.namedraw.repository.DrawQueueRepository;
 import com.namedraw.repository.DrawRepository;
 import com.namedraw.repository.ParticipationRepository;
 import java.time.LocalDate;
@@ -17,6 +16,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 /**
  * Service layer for Draw entity operations.
@@ -37,8 +38,7 @@ public class DrawService {
 
   private final DrawRepository drawRepository;
   private final ParticipationRepository participationRepository;
-  private final DrawQueueRepository drawQueueRepository;
-  private final UserService userService;
+  private final com.namedraw.repository.JoinQueueRepository joinQueueRepository;
 
   /**
    * Creates a new draw with the specified parameters.
@@ -160,44 +160,90 @@ public class DrawService {
   public Participation joinDraw(UUID drawId, User participant) {
     log.debug("User {} attempting to join draw {}", participant.getId(), drawId);
 
-    // Find the draw
-    Draw draw =
-        drawRepository
-            .findById(drawId)
-            .orElseThrow(() -> new IllegalArgumentException("Draw not found with ID: " + drawId));
-
-    // Validate draw state
-    if (draw.getState() != DrawState.JOINING) {
-      throw new IllegalStateException("Cannot join draw - draw is not in JOINING state");
+    // Acquire a lightweight join lock to serialize attempts
+    int attempts = 0;
+    boolean locked = false;
+    while (!locked && attempts < 10) {
+      try {
+        int inserted = joinQueueRepository.tryLock(drawId);
+        locked = inserted == 1;
+        if (locked) {
+          // Ensure lock is released only after this transaction commits
+          TransactionSynchronizationManager.registerSynchronization(
+              new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                  try {
+                    joinQueueRepository.deleteByDrawId(drawId);
+                  } catch (Exception e) {
+                    log.warn(
+                        "Failed to release join lock for draw {} after commit: {}",
+                        drawId,
+                        e.getMessage());
+                  }
+                }
+              });
+        }
+      } catch (org.springframework.dao.DataIntegrityViolationException e) {
+        attempts++;
+        try {
+          Thread.sleep(10L * attempts);
+        } catch (InterruptedException ie) {
+          Thread.currentThread().interrupt();
+          throw new RuntimeException("Interrupted while waiting for join lock", ie);
+        }
+      }
+    }
+    if (!locked) {
+      throw new IllegalStateException("Another join is in progress. Please try again.");
     }
 
-    // Check if user is already a participant
-    Optional<Participation> existingParticipation =
-        participationRepository.findByUserAndDraw(participant, draw);
-    if (existingParticipation.isPresent()) {
-      throw new IllegalArgumentException("User is already a participant in this draw");
+    try {
+      // Load the draw to validate existence and current state for error messages
+      Draw draw =
+          drawRepository
+              .findById(drawId)
+              .orElseThrow(() -> new IllegalArgumentException("Draw not found with ID: " + drawId));
+
+      // Validate not already a participant
+      Optional<Participation> existingParticipation =
+          participationRepository.findByUserAndDraw(participant, draw);
+      if (existingParticipation.isPresent()) {
+        throw new IllegalArgumentException("User is already a participant in this draw");
+      }
+
+      // Atomically increment participant count only if JOINING and under capacity
+      int updated = drawRepository.tryIncrementParticipantCount(drawId, LocalDateTime.now());
+      if (updated == 0) {
+        // Either not JOINING or at capacity
+        if (draw.getState() != DrawState.JOINING) {
+          throw new IllegalStateException("Cannot join draw - draw is not in JOINING state");
+        }
+        throw new IllegalStateException("Cannot join draw - maximum capacity reached");
+      }
+
+      // Create participation (set joinedAt to satisfy bean validation before insert)
+      Participation participation =
+          Participation.builder()
+              .user(participant)
+              .draw(draw)
+              .joinedAt(LocalDateTime.now())
+              .build();
+
+      final Participation savedParticipation = participationRepository.saveAndFlush(participation);
+
+      // Refresh draw to reflect any auto-transition done in DB
+      draw =
+          drawRepository
+              .findById(drawId)
+              .orElseThrow(() -> new IllegalStateException("Draw not found after join operation"));
+
+      log.info("User {} joined draw {} successfully", participant.getId(), drawId);
+
+      return savedParticipation;
+    } finally {
+      // Lock will be released in afterCommit callback
     }
-
-    // Check capacity
-    if (hasReachedMaxCapacity(draw)) {
-      throw new IllegalStateException("Cannot join draw - maximum capacity reached");
-    }
-
-    // Create participation
-    Participation participation = Participation.builder().user(participant).draw(draw).build();
-
-    final Participation savedParticipation = participationRepository.save(participation);
-
-    // Update draw participant count
-    draw.setParticipantCount(draw.getParticipantCount() + 1);
-    drawRepository.save(draw);
-
-    // Check if we need to auto-transition to OPEN state
-    autoTransitionToOpenIfAtCapacity(draw);
-
-    log.info("User {} joined draw {} successfully", participant.getId(), drawId);
-
-    return savedParticipation;
   }
 
   /**

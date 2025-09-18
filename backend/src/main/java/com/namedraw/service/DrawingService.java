@@ -2,7 +2,6 @@ package com.namedraw.service;
 
 import com.namedraw.model.Draw;
 import com.namedraw.model.Draw.DrawState;
-import com.namedraw.model.DrawQueue;
 import com.namedraw.model.DrawnName;
 import com.namedraw.model.Participation;
 import com.namedraw.model.User;
@@ -68,13 +67,29 @@ public class DrawingService {
     log.info("Starting draw operation for user {} in draw {}", drawerUser.getId(), drawId);
 
     // Step 1: Acquire draw lock using queue mechanism
-    DrawQueue queueEntry = DrawQueue.builder().drawId(drawId).build();
-    try {
-      drawQueueRepository.save(queueEntry);
-      log.debug("Successfully acquired draw lock for draw {}", drawId);
-    } catch (DataIntegrityViolationException e) {
-      log.warn("Draw already in progress for draw {}", drawId);
-      throw new RuntimeException("Another draw is already in progress. Please try again.", e);
+    int attempts = 0;
+    boolean locked = false;
+    while (!locked && attempts < 10) {
+      try {
+        // attempt to acquire lock row
+        drawQueueRepository.tryLock(drawId);
+        locked = true;
+        log.debug(
+            "Successfully acquired draw lock for draw {} on attempt {}", drawId, attempts + 1);
+      } catch (DataIntegrityViolationException e) {
+        // Another draw is in progress; wait briefly and retry
+        attempts++;
+        try {
+          Thread.sleep(30L * attempts); // small backoff
+        } catch (InterruptedException ie) {
+          Thread.currentThread().interrupt();
+          throw new RuntimeException("Interrupted while waiting for draw lock", ie);
+        }
+      }
+    }
+    if (!locked) {
+      log.warn("Failed to acquire draw lock for draw {} after {} attempts", drawId, attempts);
+      throw new RuntimeException("Another draw is already in progress. Please try again.");
     }
 
     try {
@@ -117,48 +132,83 @@ public class DrawingService {
         throw new IllegalStateException("Cannot perform draw with insufficient participants");
       }
 
-      // Step 7: Get all already drawn participants to exclude them
-      List<DrawnName> alreadyDrawnNames = drawnNameRepository.findByDrawOrderByDrawnAtAsc(draw);
-      List<UUID> alreadyDrawnUserIds =
-          alreadyDrawnNames.stream().map(drawnName -> drawnName.getDrawnUser().getId()).toList();
+      // Step 7: Determine available names (participants whose names haven't been drawn yet)
+      List<User> availableUsers = drawnNameRepository.findAvailableUsersToDraw(draw);
 
-      // Step 8: Find eligible participants (exclude drawer and already drawn)
+      // Exclude self from eligible list
       List<User> eligibleUsers =
-          allParticipants.stream()
-              .map(Participation::getUser)
-              .filter(user -> !user.getId().equals(drawerUser.getId())) // Exclude self
-              .filter(user -> !alreadyDrawnUserIds.contains(user.getId())) // Exclude already drawn
-              .toList();
+          availableUsers.stream().filter(user -> !user.getId().equals(drawerUser.getId())).toList();
 
-      if (eligibleUsers.isEmpty()) {
-        log.warn("No eligible users to draw for user {} in draw {}", drawerUser.getId(), drawId);
+      User drawnUser;
+      if (!eligibleUsers.isEmpty()) {
+        // Step 8: Select random eligible user
+        drawnUser = eligibleUsers.get(random.nextInt(eligibleUsers.size()));
+        log.info("User {} drew user {} in draw {}", drawerUser.getId(), drawnUser.getId(), drawId);
+
+        // Step 9: Create DrawnName record
+        DrawnName drawnName =
+            DrawnName.builder()
+                .draw(draw)
+                .drawerUser(drawerUser)
+                .drawnUser(drawnUser)
+                .drawnAt(LocalDateTime.now())
+                .build();
+
+        DrawnName savedDrawnName = drawnNameRepository.save(drawnName);
+        log.info(
+            "Successfully completed draw operation for user {} in draw {}",
+            drawerUser.getId(),
+            drawId);
+        return savedDrawnName;
+      }
+
+      // Step 8b: Fallback - Only self remains available (last drawer dead-end).
+      // Resolve by swapping with a previous assignment to avoid self-draw.
+      List<DrawnName> alreadyDrawnNames = drawnNameRepository.findByDrawOrderByDrawnAtAsc(draw);
+      if (alreadyDrawnNames.isEmpty()) {
+        // Should not happen since we have >1 participants and no eligible users implies last step
+        log.error("No previous draws found but eligible users empty for draw {}", drawId);
         throw new RuntimeException("No eligible participants available to draw");
       }
 
-      // Step 9: Select random eligible user
-      User drawnUser = eligibleUsers.get(random.nextInt(eligibleUsers.size()));
-      log.info("User {} drew user {} in draw {}", drawerUser.getId(), drawnUser.getId(), drawId);
+      DrawnName previous = alreadyDrawnNames.get(random.nextInt(alreadyDrawnNames.size()));
+      if (previous.getDrawerUser().getId().equals(drawerUser.getId())) {
+        // Pick the first different previous drawer to ensure valid swap
+        Optional<DrawnName> alt =
+            alreadyDrawnNames.stream()
+                .filter(dn -> !dn.getDrawerUser().getId().equals(drawerUser.getId()))
+                .findFirst();
+        if (alt.isPresent()) {
+          previous = alt.get();
+        }
+      }
 
-      // Step 10: Create DrawnName record
-      DrawnName drawnName =
+      User previousDrawn = previous.getDrawnUser();
+      // Assign current drawer to take over previous's drawn user
+      final DrawnName currentAssignment =
           DrawnName.builder()
               .draw(draw)
               .drawerUser(drawerUser)
-              .drawnUser(drawnUser)
+              .drawnUser(previousDrawn)
               .drawnAt(LocalDateTime.now())
               .build();
 
-      DrawnName savedDrawnName = drawnNameRepository.save(drawnName);
-      log.info(
-          "Successfully completed draw operation for user {} in draw {}",
-          drawerUser.getId(),
-          drawId);
+      // Update previous drawer to draw the current drawer user (who was the only remaining)
+      previous.setDrawnUser(drawerUser);
+      drawnNameRepository.save(previous);
 
-      return savedDrawnName;
+      log.info(
+          "Resolved last-drawer dead-end by swapping: user {} now draws {}, swapped with {}",
+          drawerUser.getId(),
+          previousDrawn.getId(),
+          previous.getDrawerUser().getId());
+
+      return drawnNameRepository.save(currentAssignment);
 
     } finally {
       // Step 11: Always release the draw lock
-      drawQueueRepository.delete(queueEntry);
+      // release lock by draw id (ignore result)
+      drawQueueRepository.deleteByDrawId(drawId);
       log.debug("Released draw lock for draw {}", drawId);
     }
   }
@@ -243,6 +293,6 @@ public class DrawingService {
    * @return true if a draw is in progress, false otherwise
    */
   public boolean isDrawInProgress(UUID drawId) {
-    return drawQueueRepository.existsById(drawId);
+    return drawQueueRepository.existsByDrawId(drawId);
   }
 }

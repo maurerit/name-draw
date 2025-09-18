@@ -105,7 +105,8 @@ public class DrawingResultsContractTest {
 
     // active draw non-participant -> 403
     when(drawService.findDrawById(ACTIVE_NON_PARTICIPANT_DRAW))
-        .thenReturn(Optional.of(buildDraw(ACTIVE_NON_PARTICIPANT_DRAW, DrawState.OPEN)));
+        .thenReturn(
+            Optional.of(buildDraw(ACTIVE_NON_PARTICIPANT_DRAW, DrawState.OPEN, secondUser)));
     when(drawService.isUserParticipant(ACTIVE_NON_PARTICIPANT_DRAW, testUser)).thenReturn(false);
 
     // non existent
@@ -133,6 +134,21 @@ public class DrawingResultsContractTest {
     return Draw.builder()
         .id(id)
         .creator(testUser)
+        .title("Test Draw")
+        .state(state)
+        .drawDate(LocalDate.now())
+        .participantCount(2)
+        .maxParticipants(10)
+        .createdAt(LocalDateTime.now().minusDays(1))
+        .openedAt(state == DrawState.OPEN ? LocalDateTime.now().minusHours(1) : null)
+        .archivedAt(state == DrawState.ARCHIVED ? LocalDateTime.now().minusHours(1) : null)
+        .build();
+  }
+
+  private Draw buildDraw(UUID id, DrawState state, User creator) {
+    return Draw.builder()
+        .id(id)
+        .creator(creator)
         .title("Test Draw")
         .state(state)
         .drawDate(LocalDate.now())
