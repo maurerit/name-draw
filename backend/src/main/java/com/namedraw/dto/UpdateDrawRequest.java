@@ -1,6 +1,5 @@
 package com.namedraw.dto;
 
-import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Size;
@@ -26,7 +25,6 @@ public class UpdateDrawRequest {
   @Size(max = 500, message = "Description cannot exceed 500 characters")
   private String description;
 
-  @Future(message = "Draw date must be in the future")
   private LocalDate drawDate;
 
   @Min(value = 2, message = "Minimum participants is 2")

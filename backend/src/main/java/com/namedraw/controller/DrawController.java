@@ -99,9 +99,14 @@ public class DrawController {
                 createErrorResponse("Unauthorized", "User not found or inactive", "/api/v1/draws"));
       }
 
-      // Limit page size to 100
+      // Enforce maximum page size of 100
       if (size > 100) {
-        size = 100;
+        log.warn("Requested page size {} exceeds maximum; returning 400", size);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+            .contentType(MediaType.APPLICATION_JSON)
+            .body(
+                createErrorResponse(
+                    "INVALID_ARGUMENT", "Page size cannot exceed 100", "/api/v1/draws"));
       }
 
       User currentUser = userOpt.get();
@@ -330,11 +335,11 @@ public class DrawController {
       // Check if draw is in JOINING state
       if (draw.getState() != DrawState.JOINING) {
         log.warn("Attempted to update draw ID: {} in state: {}", drawId, draw.getState());
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
             .contentType(MediaType.APPLICATION_JSON)
             .body(
                 createErrorResponse(
-                    "Bad Request",
+                    "Forbidden",
                     "Draw can only be updated in JOINING state",
                     "/api/v1/draws/" + drawId));
       }
@@ -429,6 +434,14 @@ public class DrawController {
           .body(
               createErrorResponse(
                   "Bad Request", e.getMessage(), "/api/v1/draws/" + drawId + "/join"));
+    } catch (IllegalStateException e) {
+      // Business rule violations (e.g., wrong state, at capacity)
+      log.warn("Cannot join draw ID {}: {}", drawId, e.getMessage());
+      return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+              createErrorResponse(
+                  "Bad Request", e.getMessage(), "/api/v1/draws/" + drawId + "/join"));
     } catch (Exception e) {
       log.error("Error joining draw ID: {}", drawId, e);
       return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -512,6 +525,14 @@ public class DrawController {
 
     } catch (IllegalArgumentException e) {
       log.warn("Invalid request for open draw: {}", e.getMessage());
+      return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+              createErrorResponse(
+                  "Bad Request", e.getMessage(), "/api/v1/draws/" + drawId + "/open"));
+    } catch (IllegalStateException e) {
+      // Business rule violations (e.g., wrong state, insufficient participants)
+      log.warn("Cannot open draw ID {}: {}", drawId, e.getMessage());
       return ResponseEntity.status(HttpStatus.BAD_REQUEST)
           .contentType(MediaType.APPLICATION_JSON)
           .body(

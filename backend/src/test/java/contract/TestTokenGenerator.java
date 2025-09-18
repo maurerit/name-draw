@@ -18,6 +18,8 @@ public class TestTokenGenerator {
       "test-jwt-secret-key-for-contract-tests-minimum-256-bits-long";
   private static final SecretKey SIGNING_KEY =
       Keys.hmacShaKeyFor(TEST_JWT_SECRET.getBytes(StandardCharsets.UTF_8));
+  // Deterministic different user id for tests that need a non-creator identity
+  private static final String SECOND_USER_ID = "223e4567-e89b-12d3-a456-426614174001";
 
   /** Generates a valid refresh token for testing. */
   public static String generateValidRefreshToken() {
@@ -109,6 +111,24 @@ public class TestTokenGenerator {
 
     return Jwts.builder()
         .subject(testUser.getId().toString())
+        .claims(claims)
+        .issuedAt(Date.from(now))
+        .expiration(Date.from(expiry))
+        .signWith(SIGNING_KEY)
+        .compact();
+  }
+
+  /** Generates a valid access token for a different (non-test) user. */
+  public static String generateValidAccessTokenForDifferentUser() {
+    Map<String, Object> claims = new HashMap<>();
+    claims.put("type", "access");
+    claims.put("userId", SECOND_USER_ID);
+
+    Instant now = Instant.now();
+    Instant expiry = now.plus(1, ChronoUnit.HOURS);
+
+    return Jwts.builder()
+        .subject(SECOND_USER_ID)
         .claims(claims)
         .issuedAt(Date.from(now))
         .expiration(Date.from(expiry))

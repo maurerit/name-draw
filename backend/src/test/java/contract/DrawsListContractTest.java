@@ -1,8 +1,14 @@
 package contract;
 
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+import com.namedraw.model.User;
+import com.namedraw.repository.UserRepository;
+import java.util.Optional;
+import java.util.UUID;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -32,6 +38,27 @@ import org.springframework.test.web.servlet.ResultActions;
 public class DrawsListContractTest {
 
   @Autowired private MockMvc mockMvc;
+  @Autowired private UserRepository userRepository;
+
+  @BeforeEach
+  void setUp() {
+    // Return test user for primary token
+    User testUser = ContractTestConfig.getTestUser();
+    when(userRepository.findById(testUser.getId())).thenReturn(Optional.of(testUser));
+
+    // Return a second active user for tokens representing a different user
+    UUID secondUserId = UUID.fromString("223e4567-e89b-12d3-a456-426614174001");
+    User secondUser =
+        User.builder()
+            .id(secondUserId)
+            .oauthProvider("google")
+            .oauthId("test456")
+            .name("Second User")
+            .email("second@example.com")
+            .isActive(true)
+            .build();
+    when(userRepository.findById(secondUserId)).thenReturn(Optional.of(secondUser));
+  }
 
   @Test
   public void getDraws_withValidToken_shouldReturn200WithDrawPage() throws Exception {

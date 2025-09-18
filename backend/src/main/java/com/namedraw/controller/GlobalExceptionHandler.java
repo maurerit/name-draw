@@ -8,9 +8,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 /**
  * Global exception handler for REST controllers.
@@ -45,6 +49,88 @@ public class GlobalExceptionHandler {
     errorResponse.put("timestamp", Instant.now().toString());
     errorResponse.put("path", request.getDescription(false).replace("uri=", ""));
 
+    return ResponseEntity.badRequest().contentType(MediaType.APPLICATION_JSON).body(errorResponse);
+  }
+
+  /** Map invalid request parameter or path variable conversion errors to 400. */
+  @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+  public ResponseEntity<Map<String, Object>> handleMethodArgumentTypeMismatch(
+      MethodArgumentTypeMismatchException ex, WebRequest request) {
+    log.warn("Bad request (type mismatch): {}", ex.getMessage());
+    Map<String, Object> errorResponse = new HashMap<>();
+    errorResponse.put("error", "INVALID_ARGUMENT");
+    errorResponse.put("message", ex.getMessage());
+    errorResponse.put("timestamp", Instant.now().toString());
+    errorResponse.put("path", request.getDescription(false).replace("uri=", ""));
+    return ResponseEntity.badRequest().contentType(MediaType.APPLICATION_JSON).body(errorResponse);
+  }
+
+  /** Map illegal state errors from services (e.g., wrong draw state) to 400. */
+  @ExceptionHandler(IllegalStateException.class)
+  public ResponseEntity<Map<String, Object>> handleIllegalState(
+      IllegalStateException ex, WebRequest request) {
+    log.warn("Invalid state: {}", ex.getMessage());
+    Map<String, Object> errorResponse = new HashMap<>();
+    errorResponse.put("error", "INVALID_STATE");
+    errorResponse.put("message", ex.getMessage());
+    errorResponse.put("timestamp", Instant.now().toString());
+    errorResponse.put("path", request.getDescription(false).replace("uri=", ""));
+    return ResponseEntity.badRequest().contentType(MediaType.APPLICATION_JSON).body(errorResponse);
+  }
+
+  /** Map security exceptions to 403 Forbidden. */
+  @ExceptionHandler(SecurityException.class)
+  public ResponseEntity<Map<String, Object>> handleSecurityException(
+      SecurityException ex, WebRequest request) {
+    log.warn("Forbidden: {}", ex.getMessage());
+    Map<String, Object> errorResponse = new HashMap<>();
+    errorResponse.put("error", "FORBIDDEN");
+    errorResponse.put("message", ex.getMessage());
+    errorResponse.put("timestamp", Instant.now().toString());
+    errorResponse.put("path", request.getDescription(false).replace("uri=", ""));
+    return ResponseEntity.status(HttpStatus.FORBIDDEN)
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(errorResponse);
+  }
+
+  /** Map missing resource from static handler to 404 instead of 500. */
+  @ExceptionHandler(NoResourceFoundException.class)
+  public ResponseEntity<Map<String, Object>> handleNoResourceFound(
+      NoResourceFoundException ex, WebRequest request) {
+    log.warn("Resource not found: {}", ex.getMessage());
+    Map<String, Object> errorResponse = new HashMap<>();
+    errorResponse.put("error", "Not Found");
+    errorResponse.put("message", ex.getMessage());
+    errorResponse.put("timestamp", Instant.now().toString());
+    errorResponse.put("path", request.getDescription(false).replace("uri=", ""));
+    return ResponseEntity.status(HttpStatus.NOT_FOUND)
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(errorResponse);
+  }
+
+  /** Map body validation errors to 400. */
+  @ExceptionHandler(MethodArgumentNotValidException.class)
+  public ResponseEntity<Map<String, Object>> handleMethodArgumentNotValid(
+      MethodArgumentNotValidException ex, WebRequest request) {
+    log.warn("Validation failed: {}", ex.getMessage());
+    Map<String, Object> errorResponse = new HashMap<>();
+    errorResponse.put("error", "INVALID_ARGUMENT");
+    errorResponse.put("message", "Validation failed");
+    errorResponse.put("timestamp", Instant.now().toString());
+    errorResponse.put("path", request.getDescription(false).replace("uri=", ""));
+    return ResponseEntity.badRequest().contentType(MediaType.APPLICATION_JSON).body(errorResponse);
+  }
+
+  /** Map malformed JSON to 400. */
+  @ExceptionHandler(HttpMessageNotReadableException.class)
+  public ResponseEntity<Map<String, Object>> handleHttpMessageNotReadable(
+      HttpMessageNotReadableException ex, WebRequest request) {
+    log.warn("Malformed JSON: {}", ex.getMessage());
+    Map<String, Object> errorResponse = new HashMap<>();
+    errorResponse.put("error", "INVALID_ARGUMENT");
+    errorResponse.put("message", "Malformed JSON request");
+    errorResponse.put("timestamp", Instant.now().toString());
+    errorResponse.put("path", request.getDescription(false).replace("uri=", ""));
     return ResponseEntity.badRequest().contentType(MediaType.APPLICATION_JSON).body(errorResponse);
   }
 

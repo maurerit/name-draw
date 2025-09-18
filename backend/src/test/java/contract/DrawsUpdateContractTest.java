@@ -1,12 +1,24 @@
 package contract;
 
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+import com.namedraw.model.Draw;
+import com.namedraw.model.Draw.DrawState;
+import com.namedraw.model.User;
+import com.namedraw.repository.UserRepository;
+import com.namedraw.service.DrawService;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.Optional;
+import java.util.UUID;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
@@ -34,12 +46,94 @@ import org.springframework.test.web.servlet.ResultActions;
 public class DrawsUpdateContractTest {
 
   @Autowired private MockMvc mockMvc;
+  @Autowired private UserRepository userRepository;
+  @MockBean private DrawService drawService;
+
+  @BeforeEach
+  void setUp() {
+    User testUser = ContractTestConfig.getTestUser();
+    when(userRepository.findById(testUser.getId())).thenReturn(Optional.of(testUser));
+
+    UUID secondUserId = UUID.fromString("223e4567-e89b-12d3-a456-426614174001");
+    User secondUser =
+        User.builder()
+            .id(secondUserId)
+            .oauthProvider("google")
+            .oauthId("test456")
+            .name("Second User")
+            .email("second@example.com")
+            .isActive(true)
+            .build();
+    when(userRepository.findById(secondUserId)).thenReturn(Optional.of(secondUser));
+
+    // Existing JOINING draw owned by testUser
+    UUID existingDrawId = UUID.fromString("123e4567-e89b-12d3-a456-426614174000");
+    Draw joiningDraw =
+        Draw.builder()
+            .id(existingDrawId)
+            .creator(testUser)
+            .title("Family Christmas Draw")
+            .description("Old desc")
+            .state(DrawState.JOINING)
+            .drawDate(LocalDate.of(2024, 12, 20))
+            .participantCount(3)
+            .maxParticipants(10)
+            .createdAt(LocalDateTime.now().minusDays(5))
+            .build();
+    when(drawService.findDrawById(existingDrawId)).thenReturn(Optional.of(joiningDraw));
+    when(drawService.updateDraw(
+            org.mockito.ArgumentMatchers.eq(existingDrawId),
+            org.mockito.ArgumentMatchers.eq(testUser),
+            org.mockito.ArgumentMatchers.any(),
+            org.mockito.ArgumentMatchers.any(),
+            org.mockito.ArgumentMatchers.any(),
+            org.mockito.ArgumentMatchers.any()))
+        .thenAnswer(
+            inv -> {
+              String title = inv.getArgument(2);
+              String description = inv.getArgument(3);
+              LocalDate drawDate = inv.getArgument(4);
+              Integer maxP = inv.getArgument(5);
+              // Simulate service-level validation: at least one field must be provided
+              if (title == null && description == null && drawDate == null && maxP == null) {
+                throw new IllegalArgumentException("At least one field must be provided to update");
+              }
+              if (title != null) joiningDraw.setTitle(title);
+              if (description != null) joiningDraw.setDescription(description);
+              if (drawDate != null) joiningDraw.setDrawDate(drawDate);
+              if (maxP != null) joiningDraw.setMaxParticipants(maxP);
+              return joiningDraw;
+            });
+
+    // OPEN draw owned by testUser -> 403 on update
+    UUID openDrawId = UUID.fromString("456e7890-e89b-12d3-a456-426614174001");
+    Draw openDraw =
+        Draw.builder()
+            .id(openDrawId)
+            .creator(testUser)
+            .title("Open Draw")
+            .state(DrawState.OPEN)
+            .participantCount(3)
+            .maxParticipants(10)
+            .drawDate(LocalDate.of(2024, 12, 25))
+            .openedAt(LocalDateTime.now().minusDays(1))
+            .createdAt(LocalDateTime.now().minusDays(5))
+            .build();
+    when(drawService.findDrawById(openDrawId)).thenReturn(Optional.of(openDraw));
+
+    // Draw owned by different user -> 403
+    when(drawService.findDrawById(existingDrawId)).thenReturn(Optional.of(joiningDraw));
+    // When called with different requester, controller forbids before calling service
+
+    // Non-existent draw -> empty
+    UUID nonExistent = UUID.fromString("999e9999-e99b-99d9-a999-999999999999");
+    when(drawService.findDrawById(nonExistent)).thenReturn(Optional.empty());
+  }
 
   @Test
   public void updateDraw_withValidRequest_shouldReturn200WithUpdatedDrawJson() throws Exception {
     // Given: Valid JWT token and update draw request for existing draw
-    String validJwtToken =
-        "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
+    String validJwtToken = "Bearer " + TestTokenGenerator.generateValidAccessToken();
     String drawId = "123e4567-e89b-12d3-a456-426614174000";
     String updateDrawRequest =
         "{"
@@ -80,8 +174,7 @@ public class DrawsUpdateContractTest {
   @Test
   public void updateDraw_withPartialRequest_shouldReturn200WithUpdatedDrawJson() throws Exception {
     // Given: Valid JWT token and partial update (only title)
-    String validJwtToken =
-        "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
+    String validJwtToken = "Bearer " + TestTokenGenerator.generateValidAccessToken();
     String drawId = "123e4567-e89b-12d3-a456-426614174000";
     String updateDrawRequest = "{" + "\"title\": \"New Title Only\"" + "}";
 
@@ -133,7 +226,7 @@ public class DrawsUpdateContractTest {
   public void updateDraw_asNonCreator_shouldReturn403() throws Exception {
     // Given: Valid JWT token but user is not the creator of the draw
     String validJwtToken =
-        "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI5ODc2NTQzMjEiLCJuYW1lIjoiSmFuZSBEb2UiLCJpYXQiOjE1MTYyMzkwMjJ9.different-signature";
+        "Bearer " + TestTokenGenerator.generateValidAccessTokenForDifferentUser();
     String drawId = "123e4567-e89b-12d3-a456-426614174000";
     String updateDrawRequest = "{" + "\"title\": \"Non-Creator Update\"" + "}";
 
@@ -149,8 +242,7 @@ public class DrawsUpdateContractTest {
   @Test
   public void updateDraw_inWrongState_shouldReturn403() throws Exception {
     // Given: Valid JWT token but draw is not in JOINING state (e.g., OPEN or ARCHIVED)
-    String validJwtToken =
-        "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
+    String validJwtToken = "Bearer " + TestTokenGenerator.generateValidAccessToken();
     String drawId = "456e7890-e89b-12d3-a456-426614174001"; // Draw in OPEN state
     String updateDrawRequest = "{" + "\"title\": \"Update Open Draw\"" + "}";
 
@@ -166,8 +258,7 @@ public class DrawsUpdateContractTest {
   @Test
   public void updateDraw_withNonexistentDrawId_shouldReturn404() throws Exception {
     // Given: Valid JWT token but draw does not exist
-    String validJwtToken =
-        "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
+    String validJwtToken = "Bearer " + TestTokenGenerator.generateValidAccessToken();
     String nonexistentDrawId = "999e9999-e99b-99d9-a999-999999999999";
     String updateDrawRequest = "{" + "\"title\": \"Update Nonexistent Draw\"" + "}";
 
@@ -183,8 +274,7 @@ public class DrawsUpdateContractTest {
   @Test
   public void updateDraw_withTitleTooLong_shouldReturn400() throws Exception {
     // Given: Valid JWT token but title exceeds 100 characters
-    String validJwtToken =
-        "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
+    String validJwtToken = "Bearer " + TestTokenGenerator.generateValidAccessToken();
     String drawId = "123e4567-e89b-12d3-a456-426614174000";
     String longTitle = "A".repeat(101); // 101 characters, exceeds 100 char limit
     String updateDrawRequest = "{" + "\"title\": \"" + longTitle + "\"" + "}";
@@ -201,8 +291,7 @@ public class DrawsUpdateContractTest {
   @Test
   public void updateDraw_withDescriptionTooLong_shouldReturn400() throws Exception {
     // Given: Valid JWT token but description exceeds 500 characters
-    String validJwtToken =
-        "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
+    String validJwtToken = "Bearer " + TestTokenGenerator.generateValidAccessToken();
     String drawId = "123e4567-e89b-12d3-a456-426614174000";
     String longDescription = "A".repeat(501); // 501 characters, exceeds 500 char limit
     String updateDrawRequest =
@@ -220,8 +309,7 @@ public class DrawsUpdateContractTest {
   @Test
   public void updateDraw_withMaxParticipantsTooLow_shouldReturn400() throws Exception {
     // Given: Valid JWT token but maxParticipants below minimum (2)
-    String validJwtToken =
-        "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
+    String validJwtToken = "Bearer " + TestTokenGenerator.generateValidAccessToken();
     String drawId = "123e4567-e89b-12d3-a456-426614174000";
     String updateDrawRequest = "{" + "\"title\": \"Valid Title\"," + "\"maxParticipants\": 1" + "}";
 
@@ -237,8 +325,7 @@ public class DrawsUpdateContractTest {
   @Test
   public void updateDraw_withMaxParticipantsTooHigh_shouldReturn400() throws Exception {
     // Given: Valid JWT token but maxParticipants above maximum (30)
-    String validJwtToken =
-        "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
+    String validJwtToken = "Bearer " + TestTokenGenerator.generateValidAccessToken();
     String drawId = "123e4567-e89b-12d3-a456-426614174000";
     String updateDrawRequest =
         "{" + "\"title\": \"Valid Title\"," + "\"maxParticipants\": 31" + "}";
@@ -255,8 +342,7 @@ public class DrawsUpdateContractTest {
   @Test
   public void updateDraw_withInvalidDateFormat_shouldReturn400() throws Exception {
     // Given: Valid JWT token but invalid date format
-    String validJwtToken =
-        "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
+    String validJwtToken = "Bearer " + TestTokenGenerator.generateValidAccessToken();
     String drawId = "123e4567-e89b-12d3-a456-426614174000";
     String updateDrawRequest =
         "{"
@@ -276,8 +362,7 @@ public class DrawsUpdateContractTest {
   @Test
   public void updateDraw_withEmptyBody_shouldReturn400() throws Exception {
     // Given: Valid JWT token but empty request body
-    String validJwtToken =
-        "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
+    String validJwtToken = "Bearer " + TestTokenGenerator.generateValidAccessToken();
     String drawId = "123e4567-e89b-12d3-a456-426614174000";
 
     // When: PUT /api/v1/draws/{drawId} with empty body
@@ -297,8 +382,7 @@ public class DrawsUpdateContractTest {
   @Test
   public void updateDraw_withMalformedJson_shouldReturn400() throws Exception {
     // Given: Valid JWT token but malformed JSON
-    String validJwtToken =
-        "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
+    String validJwtToken = "Bearer " + TestTokenGenerator.generateValidAccessToken();
     String drawId = "123e4567-e89b-12d3-a456-426614174000";
     String malformedJson = "{\"title\": \"Test Draw\", \"drawDate\": "; // Missing closing
 
@@ -314,8 +398,7 @@ public class DrawsUpdateContractTest {
   @Test
   public void updateDraw_withInvalidUuidFormat_shouldReturn400() throws Exception {
     // Given: Valid JWT token but invalid UUID format for drawId
-    String validJwtToken =
-        "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
+    String validJwtToken = "Bearer " + TestTokenGenerator.generateValidAccessToken();
     String invalidDrawId = "not-a-valid-uuid";
     String updateDrawRequest = "{" + "\"title\": \"Valid Title\"" + "}";
 
