@@ -7,7 +7,10 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "vitest",
+    "test:watch": "vitest --watch",
+    "test:ci": "vitest run --reporter=default --coverage"
   },
   "dependencies": {
     "@testing-library/jest-dom": "^6.8.0",
