@@ -119,11 +119,11 @@
 - [x] T051 [P] Drawing page component in `frontend/src/pages/DrawingPage.tsx`
 
 ## Phase 3.9: Frontend Component Tests
-- [ ] T052 [P] Login page component test in `frontend/tests/components/LoginPage.test.tsx`
-- [ ] T053 [P] Dashboard page component test in `frontend/tests/components/DashboardPage.test.tsx`
-- [ ] T054 [P] Create draw page component test in `frontend/tests/components/CreateDrawPage.test.tsx`
-- [ ] T055 [P] Draw detail page component test in `frontend/tests/components/DrawDetailPage.test.tsx`
-- [ ] T056 [P] Drawing page component test in `frontend/tests/components/DrawingPage.test.tsx`
+- [x] T052 [P] Login page component test in `frontend/tests/components/LoginPage.test.tsx`
+- [x] T053 [P] Dashboard page component test in `frontend/tests/components/DashboardPage.test.tsx`
+- [x] T054 [P] Create draw page component test in `frontend/tests/components/CreateDrawPage.test.tsx`
+- [x] T055 [P] Draw detail page component test in `frontend/tests/components/DrawDetailPage.test.tsx`
+- [x] T056 [P] Drawing page component test in `frontend/tests/components/DrawingPage.test.tsx`
 
 ## Phase 3.10: Integration and Security
 - [ ] T057 JWT token service integration in `backend/src/main/java/security/JwtTokenService.java`
