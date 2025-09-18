@@ -5,11 +5,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import com.namedraw.model.Draw;
-import com.namedraw.model.Draw.DrawState;
 import com.namedraw.model.User;
+import com.namedraw.repository.DrawRepository;
 import com.namedraw.repository.UserRepository;
-import com.namedraw.service.DrawService;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
@@ -18,7 +16,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
@@ -45,7 +42,8 @@ public class DrawsCreateContractTest {
 
   @Autowired private MockMvc mockMvc;
   @Autowired private UserRepository userRepository;
-  @MockBean private DrawService drawService;
+  // Use the primary mocked DrawRepository supplied by ContractTestConfig
+  @Autowired private DrawRepository drawRepository;
 
   @BeforeEach
   void setUp() {
@@ -53,54 +51,19 @@ public class DrawsCreateContractTest {
     User testUser = ContractTestConfig.getTestUser();
     when(userRepository.findById(testUser.getId())).thenReturn(Optional.of(testUser));
 
-    // Stub createDraw to emulate service validation and return a new draw
-    when(drawService.createDraw(
-            org.mockito.ArgumentMatchers.any(User.class),
-            org.mockito.ArgumentMatchers.any(),
-            org.mockito.ArgumentMatchers.any(),
-            org.mockito.ArgumentMatchers.any(),
-            org.mockito.ArgumentMatchers.any()))
+    // Allow the real service to run; stub repository persistence behavior
+    when(drawRepository.save(org.mockito.ArgumentMatchers.any(Draw.class)))
         .thenAnswer(
             invocation -> {
-              User creator = invocation.getArgument(0);
-              String title = invocation.getArgument(1);
-              String description = invocation.getArgument(2);
-              LocalDate drawDate = invocation.getArgument(3);
-              Integer maxParticipants = invocation.getArgument(4);
-
-              if (title == null || title.trim().isEmpty()) {
-                throw new IllegalArgumentException("Draw title cannot be null or empty");
+              Draw d = invocation.getArgument(0);
+              // Ensure an ID and createdAt are present as a persisted entity would have
+              if (d.getId() == null) {
+                d.setId(UUID.randomUUID());
               }
-              if (title.trim().length() > 100) {
-                throw new IllegalArgumentException("Draw title cannot exceed 100 characters");
+              if (d.getCreatedAt() == null) {
+                d.setCreatedAt(LocalDateTime.now());
               }
-              if (description != null && description.trim().length() > 500) {
-                throw new IllegalArgumentException("Draw description cannot exceed 500 characters");
-              }
-              if (drawDate == null) {
-                throw new IllegalArgumentException("Draw date cannot be null");
-              }
-              if (maxParticipants == null) {
-                maxParticipants = 30;
-              }
-              if (maxParticipants < 2) {
-                throw new IllegalArgumentException("Draw must allow at least 2 participants");
-              }
-              if (maxParticipants > 30) {
-                throw new IllegalArgumentException("Draw cannot exceed 30 participants");
-              }
-
-              return Draw.builder()
-                  .id(UUID.randomUUID())
-                  .creator(creator)
-                  .title(title)
-                  .description(description)
-                  .state(DrawState.JOINING)
-                  .drawDate(drawDate)
-                  .participantCount(0)
-                  .maxParticipants(maxParticipants)
-                  .createdAt(LocalDateTime.now())
-                  .build();
+              return d;
             });
   }
 
