@@ -1,12 +1,27 @@
 package contract;
 
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+import com.namedraw.model.Draw;
+import com.namedraw.model.Draw.DrawState;
+import com.namedraw.model.DrawnName;
+import com.namedraw.model.User;
+import com.namedraw.repository.UserRepository;
+import com.namedraw.service.DrawService;
+import com.namedraw.service.DrawingService;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
@@ -29,14 +44,121 @@ import org.springframework.test.web.servlet.ResultActions;
 public class DrawingResultsContractTest {
 
   @Autowired private MockMvc mockMvc;
+  @Autowired private UserRepository userRepository;
+  @MockBean private DrawService drawService;
+  @MockBean private DrawingService drawingService;
+
+  private User testUser;
+  private User secondUser;
+
+  private static final UUID DRAW_WITH_RESULTS =
+      UUID.fromString("123e4567-e89b-12d3-a456-426614174000");
+  private static final UUID DRAW_NO_RESULTS =
+      UUID.fromString("223e4567-e89b-12d3-a456-426614174001");
+  private static final UUID ARCHIVED_DRAW = UUID.fromString("323e4567-e89b-12d3-a456-426614174002");
+  private static final UUID ACTIVE_NON_PARTICIPANT_DRAW =
+      UUID.fromString("423e4567-e89b-12d3-a456-426614174003");
+  private static final UUID MULTIPLE_RESULTS_DRAW =
+      UUID.fromString("523e4567-e89b-12d3-a456-426614174004");
+  private static final UUID WITH_USER_PROFILE_DRAW =
+      UUID.fromString("623e4567-e89b-12d3-a456-426614174005");
+  private static final UUID NON_EXISTENT_DRAW =
+      UUID.fromString("999e4567-e89b-12d3-a456-426614174999");
+
+  @BeforeEach
+  void setUp() {
+    // users
+    testUser = ContractTestConfig.getTestUser();
+    when(userRepository.findById(testUser.getId())).thenReturn(Optional.of(testUser));
+
+    UUID secondUserId = UUID.fromString("223e4567-e89b-12d3-a456-426614174001");
+    secondUser =
+        User.builder()
+            .id(secondUserId)
+            .oauthProvider("google")
+            .oauthId("test456")
+            .name("Second User")
+            .email("second@example.com")
+            .isActive(true)
+            .build();
+    when(userRepository.findById(secondUserId)).thenReturn(Optional.of(secondUser));
+
+    // draw with results (participant)
+    when(drawService.findDrawById(DRAW_WITH_RESULTS))
+        .thenReturn(Optional.of(buildDraw(DRAW_WITH_RESULTS, DrawState.OPEN)));
+    when(drawService.isUserParticipant(DRAW_WITH_RESULTS, testUser)).thenReturn(true);
+    when(drawingService.getDrawResults(DRAW_WITH_RESULTS))
+        .thenReturn(List.of(buildDrawnName(DRAW_WITH_RESULTS, testUser, secondUser)));
+
+    // draw with no results (participant)
+    when(drawService.findDrawById(DRAW_NO_RESULTS))
+        .thenReturn(Optional.of(buildDraw(DRAW_NO_RESULTS, DrawState.OPEN)));
+    when(drawService.isUserParticipant(DRAW_NO_RESULTS, testUser)).thenReturn(true);
+    when(drawingService.getDrawResults(DRAW_NO_RESULTS)).thenReturn(List.of());
+
+    // archived draw (non-participant should still access)
+    when(drawService.findDrawById(ARCHIVED_DRAW))
+        .thenReturn(Optional.of(buildDraw(ARCHIVED_DRAW, DrawState.ARCHIVED)));
+    when(drawService.isUserParticipant(ARCHIVED_DRAW, testUser)).thenReturn(false);
+    when(drawingService.getDrawResults(ARCHIVED_DRAW))
+        .thenReturn(List.of(buildDrawnName(ARCHIVED_DRAW, testUser, secondUser)));
+
+    // active draw non-participant -> 403
+    when(drawService.findDrawById(ACTIVE_NON_PARTICIPANT_DRAW))
+        .thenReturn(Optional.of(buildDraw(ACTIVE_NON_PARTICIPANT_DRAW, DrawState.OPEN)));
+    when(drawService.isUserParticipant(ACTIVE_NON_PARTICIPANT_DRAW, testUser)).thenReturn(false);
+
+    // non existent
+    when(drawService.findDrawById(NON_EXISTENT_DRAW)).thenReturn(Optional.empty());
+
+    // multiple results
+    when(drawService.findDrawById(MULTIPLE_RESULTS_DRAW))
+        .thenReturn(Optional.of(buildDraw(MULTIPLE_RESULTS_DRAW, DrawState.OPEN)));
+    when(drawService.isUserParticipant(MULTIPLE_RESULTS_DRAW, testUser)).thenReturn(true);
+    when(drawingService.getDrawResults(MULTIPLE_RESULTS_DRAW))
+        .thenReturn(
+            List.of(
+                buildDrawnName(MULTIPLE_RESULTS_DRAW, testUser, secondUser),
+                buildDrawnName(MULTIPLE_RESULTS_DRAW, testUser, secondUser)));
+
+    // with user profile
+    when(drawService.findDrawById(WITH_USER_PROFILE_DRAW))
+        .thenReturn(Optional.of(buildDraw(WITH_USER_PROFILE_DRAW, DrawState.OPEN)));
+    when(drawService.isUserParticipant(WITH_USER_PROFILE_DRAW, testUser)).thenReturn(true);
+    when(drawingService.getDrawResults(WITH_USER_PROFILE_DRAW))
+        .thenReturn(List.of(buildDrawnName(WITH_USER_PROFILE_DRAW, testUser, secondUser)));
+  }
+
+  private Draw buildDraw(UUID id, DrawState state) {
+    return Draw.builder()
+        .id(id)
+        .creator(testUser)
+        .title("Test Draw")
+        .state(state)
+        .drawDate(LocalDate.now())
+        .participantCount(2)
+        .maxParticipants(10)
+        .createdAt(LocalDateTime.now().minusDays(1))
+        .openedAt(state == DrawState.OPEN ? LocalDateTime.now().minusHours(1) : null)
+        .archivedAt(state == DrawState.ARCHIVED ? LocalDateTime.now().minusHours(1) : null)
+        .build();
+  }
+
+  private DrawnName buildDrawnName(UUID drawId, User drawer, User drawn) {
+    return DrawnName.builder()
+        .draw(buildDraw(drawId, DrawState.OPEN))
+        .drawerUser(drawer)
+        .drawnUser(drawn)
+        .drawnAt(LocalDateTime.now())
+        .build();
+  }
 
   @Test
   public void getDrawResults_withValidIdAndParticipant_shouldReturn200WithResultsArray()
       throws Exception {
     // Given: Valid JWT token for participant and draw ID with results
-    String validJwtToken =
-        "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
-    String drawIdWithResults = "123e4567-e89b-12d3-a456-426614174000";
+    String validJwtToken = "Bearer " + TestTokenGenerator.generateValidAccessToken();
+    String drawIdWithResults = DRAW_WITH_RESULTS.toString();
 
     // When: GET /api/v1/draws/{drawId}/results
     // Then: Should return 200 with array of DrawResult JSON
@@ -61,9 +183,8 @@ public class DrawingResultsContractTest {
   public void getDrawResults_withValidIdAndNoResults_shouldReturn200WithEmptyArray()
       throws Exception {
     // Given: Valid JWT token for participant and draw ID with no results yet
-    String validJwtToken =
-        "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
-    String drawIdNoResults = "223e4567-e89b-12d3-a456-426614174001";
+    String validJwtToken = "Bearer " + TestTokenGenerator.generateValidAccessToken();
+    String drawIdNoResults = DRAW_NO_RESULTS.toString();
 
     // When: GET /api/v1/draws/{drawId}/results for draw with no results
     // Then: Should return 200 with empty array
@@ -78,9 +199,8 @@ public class DrawingResultsContractTest {
   public void getDrawResults_withArchivedDrawAndNonParticipant_shouldReturn200WithResults()
       throws Exception {
     // Given: Valid JWT token for non-participant and archived draw ID
-    String validJwtToken =
-        "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI5ODc2NTQzMjEwIiwibmFtZSI6IkphbmUgRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
-    String archivedDrawId = "323e4567-e89b-12d3-a456-426614174002";
+    String validJwtToken = "Bearer " + TestTokenGenerator.generateValidAccessToken();
+    String archivedDrawId = ARCHIVED_DRAW.toString();
 
     // When: GET /api/v1/draws/{drawId}/results for archived draw (non-participant)
     // Then: Should return 200 with results (archived draws are public)
@@ -93,7 +213,7 @@ public class DrawingResultsContractTest {
   @Test
   public void getDrawResults_withoutToken_shouldReturn401() throws Exception {
     // Given: Draw ID without authentication
-    String validDrawId = "123e4567-e89b-12d3-a456-426614174000";
+    String validDrawId = DRAW_WITH_RESULTS.toString();
 
     // When: GET /api/v1/draws/{drawId}/results without Authorization header
     // Then: Should return 401 Unauthorized
@@ -109,7 +229,7 @@ public class DrawingResultsContractTest {
   public void getDrawResults_withInvalidToken_shouldReturn401() throws Exception {
     // Given: Invalid JWT token and draw ID
     String invalidJwtToken = "Bearer invalid.token.here";
-    String validDrawId = "123e4567-e89b-12d3-a456-426614174000";
+    String validDrawId = DRAW_WITH_RESULTS.toString();
 
     // When: GET /api/v1/draws/{drawId}/results with invalid token
     // Then: Should return 401 Unauthorized
@@ -123,9 +243,8 @@ public class DrawingResultsContractTest {
   @Test
   public void getDrawResults_withNonParticipantAndActiveDevice_shouldReturn403() throws Exception {
     // Given: Valid JWT token for non-participant and active (non-archived) draw
-    String validJwtToken =
-        "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI5ODc2NTQzMjEwIiwibmFtZSI6IkphbmUgRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
-    String activeDrawId = "423e4567-e89b-12d3-a456-426614174003";
+    String validJwtToken = "Bearer " + TestTokenGenerator.generateValidAccessToken();
+    String activeDrawId = ACTIVE_NON_PARTICIPANT_DRAW.toString();
 
     // When: GET /api/v1/draws/{drawId}/results for active draw as non-participant
     // Then: Should return 403 Forbidden
@@ -139,9 +258,8 @@ public class DrawingResultsContractTest {
   @Test
   public void getDrawResults_withNonExistentDrawId_shouldReturn404() throws Exception {
     // Given: Valid JWT token but non-existent draw ID
-    String validJwtToken =
-        "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
-    String nonExistentDrawId = "999e4567-e89b-12d3-a456-426614174999";
+    String validJwtToken = "Bearer " + TestTokenGenerator.generateValidAccessToken();
+    String nonExistentDrawId = NON_EXISTENT_DRAW.toString();
 
     // When: GET /api/v1/draws/{drawId}/results with non-existent ID
     // Then: Should return 404 Not Found
@@ -155,8 +273,7 @@ public class DrawingResultsContractTest {
   @Test
   public void getDrawResults_withInvalidUuidFormat_shouldReturn400() throws Exception {
     // Given: Valid JWT token but invalid UUID format
-    String validJwtToken =
-        "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
+    String validJwtToken = "Bearer " + TestTokenGenerator.generateValidAccessToken();
     String invalidUuid = "not-a-valid-uuid";
 
     // When: GET /api/v1/draws/{drawId}/results with invalid UUID format
@@ -171,9 +288,8 @@ public class DrawingResultsContractTest {
   @Test
   public void getDrawResults_withMultipleResults_shouldReturnAllResults() throws Exception {
     // Given: Valid JWT token for participant and draw ID with multiple results
-    String validJwtToken =
-        "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
-    String drawIdMultipleResults = "523e4567-e89b-12d3-a456-426614174004";
+    String validJwtToken = "Bearer " + TestTokenGenerator.generateValidAccessToken();
+    String drawIdMultipleResults = MULTIPLE_RESULTS_DRAW.toString();
 
     // When: GET /api/v1/draws/{drawId}/results for draw with multiple results
     // Then: Should return 200 with array containing multiple DrawResult objects
@@ -194,9 +310,8 @@ public class DrawingResultsContractTest {
   public void getDrawResults_withValidParticipantToken_shouldReturnResultsWithUserProfile()
       throws Exception {
     // Given: Valid JWT token for participant and draw ID with results
-    String validJwtToken =
-        "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
-    String drawIdWithUserProfile = "623e4567-e89b-12d3-a456-426614174005";
+    String validJwtToken = "Bearer " + TestTokenGenerator.generateValidAccessToken();
+    String drawIdWithUserProfile = WITH_USER_PROFILE_DRAW.toString();
 
     // When: GET /api/v1/draws/{drawId}/results
     // Then: Should return complete user profile in drawnUser

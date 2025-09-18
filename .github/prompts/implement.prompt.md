@@ -6,7 +6,7 @@ Follow these instructions to execute the next task not marked as complete:
 
 ## Executing Instructions
 
-- Before executing any tasks, ALWAYS ensure you have read the spec.md file and the optional plan.md, research.md, quickstart.md and data-model.mdfiles. Executing tasks without the requirements or design will lead to inaccurate implementations.
+- Before executing any tasks, ALWAYS ensure you have read the constitution.md, spec.md file and the optional plan.md, research.md, quickstart.md and data-model.mdfiles. Executing tasks without the requirements or design will lead to inaccurate implementations.
 - Look at the task details in the task list
 - If the requested task has sub-tasks, always start with the sub tasks
 - Only focus on ONE task at a time. Do not implement functionality for other tasks.

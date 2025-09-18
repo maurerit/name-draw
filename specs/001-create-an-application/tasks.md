@@ -106,7 +106,7 @@
 - [x] T040 AuthController OAuth endpoints in `backend/src/main/java/controller/AuthController.java`
 - [x] T041 UserController profile endpoints in `backend/src/main/java/controller/UserController.java`
 - [x] T042 DrawController management endpoints in `backend/src/main/java/controller/DrawController.java`
-- [ ] T043 DrawingController drawing operations in `backend/src/main/java/controller/DrawingController.java`
+- [x] T043 DrawingController drawing operations in `backend/src/main/java/controller/DrawingController.java`
 
 ## Phase 3.8: Frontend Core Components
 - [ ] T044 [P] Authentication service with OAuth integration in `frontend/src/services/authService.ts`

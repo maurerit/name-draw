@@ -41,7 +41,7 @@ public class TestTokenGenerator {
         .claims(claims)
         .issuedAt(Date.from(now))
         .expiration(Date.from(expiry))
-        .signWith(SIGNING_KEY)
+        .signWith(SIGNING_KEY, Jwts.SIG.HS384)
         .compact();
   }
 
@@ -66,7 +66,7 @@ public class TestTokenGenerator {
         .claims(claims)
         .issuedAt(Date.from(now))
         .expiration(Date.from(expiry))
-        .signWith(SIGNING_KEY)
+        .signWith(SIGNING_KEY, Jwts.SIG.HS384)
         .compact();
   }
 
@@ -90,7 +90,7 @@ public class TestTokenGenerator {
         .claims(claims)
         .issuedAt(Date.from(past))
         .expiration(Date.from(expiry))
-        .signWith(SIGNING_KEY)
+        .signWith(SIGNING_KEY, Jwts.SIG.HS384)
         .compact();
   }
 
@@ -114,7 +114,7 @@ public class TestTokenGenerator {
         .claims(claims)
         .issuedAt(Date.from(now))
         .expiration(Date.from(expiry))
-        .signWith(SIGNING_KEY)
+        .signWith(SIGNING_KEY, Jwts.SIG.HS384)
         .compact();
   }
 
@@ -132,7 +132,7 @@ public class TestTokenGenerator {
         .claims(claims)
         .issuedAt(Date.from(now))
         .expiration(Date.from(expiry))
-        .signWith(SIGNING_KEY)
+        .signWith(SIGNING_KEY, Jwts.SIG.HS384)
         .compact();
   }
 
@@ -165,7 +165,7 @@ public class TestTokenGenerator {
         .claims(claims)
         .issuedAt(Date.from(now))
         .expiration(Date.from(expiry))
-        .signWith(SIGNING_KEY)
+        .signWith(SIGNING_KEY, Jwts.SIG.HS384)
         .compact();
   }
 }
