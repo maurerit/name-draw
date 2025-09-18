@@ -115,7 +115,7 @@
 - [x] T047 [P] Login page component in `frontend/src/pages/LoginPage.tsx`
 - [x] T048 [P] Dashboard page component in `frontend/src/pages/DashboardPage.tsx`
 - [x] T049 [P] Create draw page component in `frontend/src/pages/CreateDrawPage.tsx`
-- [ ] T050 [P] Draw detail page component in `frontend/src/pages/DrawDetailPage.tsx`
+- [x] T050 [P] Draw detail page component in `frontend/src/pages/DrawDetailPage.tsx`
 - [ ] T051 [P] Drawing page component in `frontend/src/pages/DrawingPage.tsx`
 
 ## Phase 3.9: Frontend Component Tests
