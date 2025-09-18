@@ -2,6 +2,7 @@ package contract;
 
 import com.namedraw.client.AuthClient;
 import com.namedraw.model.User;
+import com.namedraw.repository.DrawRepository;
 import com.namedraw.repository.UserRepository;
 import java.util.UUID;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -15,11 +16,11 @@ public class ContractTestConfig {
 
   private static User testUser;
 
-  // Mock repository instead of service for integration test
+  // Mock repositories and external clients instead of services for integration tests
   @MockBean private UserRepository userRepository;
+  @MockBean private DrawRepository drawRepository;
 
   @MockBean private ClientRegistrationRepository clientRegistrationRepository;
-
   @MockBean private AuthClient authClient;
 
   static {
@@ -37,4 +38,6 @@ public class ContractTestConfig {
   public static User getTestUser() {
     return testUser;
   }
+
+  // No additional beans; mocks above will replace real beans in the context
 }

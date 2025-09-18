@@ -1,8 +1,14 @@
 package contract;
 
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+import com.namedraw.model.User;
+import com.namedraw.repository.UserRepository;
+import java.util.Optional;
+import java.util.UUID;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -32,12 +38,32 @@ import org.springframework.test.web.servlet.ResultActions;
 public class DrawsListContractTest {
 
   @Autowired private MockMvc mockMvc;
+  @Autowired private UserRepository userRepository;
+
+  @BeforeEach
+  void setUp() {
+    // Return test user for primary token
+    User testUser = ContractTestConfig.getTestUser();
+    when(userRepository.findById(testUser.getId())).thenReturn(Optional.of(testUser));
+
+    // Return a second active user for tokens representing a different user
+    UUID secondUserId = UUID.fromString("223e4567-e89b-12d3-a456-426614174001");
+    User secondUser =
+        User.builder()
+            .id(secondUserId)
+            .oauthProvider("google")
+            .oauthId("test456")
+            .name("Second User")
+            .email("second@example.com")
+            .isActive(true)
+            .build();
+    when(userRepository.findById(secondUserId)).thenReturn(Optional.of(secondUser));
+  }
 
   @Test
   public void getDraws_withValidToken_shouldReturn200WithDrawPage() throws Exception {
     // Given: Valid JWT token for authenticated user
-    String validJwtToken =
-        "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
+    String validJwtToken = "Bearer " + TestTokenGenerator.generateValidAccessToken();
 
     // When: GET /api/v1/draws
     // Then: Should return 200 with DrawPage JSON
@@ -63,8 +89,7 @@ public class DrawsListContractTest {
   @Test
   public void getDraws_withStateFilter_shouldReturn200WithFilteredResults() throws Exception {
     // Given: Valid JWT token and state filter
-    String validJwtToken =
-        "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
+    String validJwtToken = "Bearer " + TestTokenGenerator.generateValidAccessToken();
 
     // When: GET /api/v1/draws?state=JOINING
     // Then: Should return 200 with DrawPage JSON
@@ -83,8 +108,7 @@ public class DrawsListContractTest {
   @Test
   public void getDraws_withPaginationParams_shouldReturn200WithPaginatedResults() throws Exception {
     // Given: Valid JWT token and pagination parameters
-    String validJwtToken =
-        "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
+    String validJwtToken = "Bearer " + TestTokenGenerator.generateValidAccessToken();
 
     // When: GET /api/v1/draws?page=0&size=10
     // Then: Should return 200 with paginated DrawPage JSON
@@ -132,8 +156,7 @@ public class DrawsListContractTest {
   @Test
   public void getDraws_withInvalidStateParam_shouldReturn400() throws Exception {
     // Given: Valid JWT token and invalid state parameter
-    String validJwtToken =
-        "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
+    String validJwtToken = "Bearer " + TestTokenGenerator.generateValidAccessToken();
 
     // When: GET /api/v1/draws?state=INVALID_STATE
     // Then: Should return 400 Bad Request
@@ -152,8 +175,7 @@ public class DrawsListContractTest {
   @Test
   public void getDraws_withExcessiveSizeParam_shouldReturn400() throws Exception {
     // Given: Valid JWT token and excessive size parameter (>100)
-    String validJwtToken =
-        "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
+    String validJwtToken = "Bearer " + TestTokenGenerator.generateValidAccessToken();
 
     // When: GET /api/v1/draws?size=200 (exceeds maximum of 100)
     // Then: Should return 400 Bad Request

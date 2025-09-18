@@ -1,8 +1,17 @@
 package contract;
 
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+import com.namedraw.model.Draw;
+import com.namedraw.model.User;
+import com.namedraw.repository.DrawRepository;
+import com.namedraw.repository.UserRepository;
+import java.time.LocalDateTime;
+import java.util.Optional;
+import java.util.UUID;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -32,12 +41,36 @@ import org.springframework.test.web.servlet.ResultActions;
 public class DrawsCreateContractTest {
 
   @Autowired private MockMvc mockMvc;
+  @Autowired private UserRepository userRepository;
+  // Use the primary mocked DrawRepository supplied by ContractTestConfig
+  @Autowired private DrawRepository drawRepository;
+
+  @BeforeEach
+  void setUp() {
+    // Stub authenticated user
+    User testUser = ContractTestConfig.getTestUser();
+    when(userRepository.findById(testUser.getId())).thenReturn(Optional.of(testUser));
+
+    // Allow the real service to run; stub repository persistence behavior
+    when(drawRepository.save(org.mockito.ArgumentMatchers.any(Draw.class)))
+        .thenAnswer(
+            invocation -> {
+              Draw d = invocation.getArgument(0);
+              // Ensure an ID and createdAt are present as a persisted entity would have
+              if (d.getId() == null) {
+                d.setId(UUID.randomUUID());
+              }
+              if (d.getCreatedAt() == null) {
+                d.setCreatedAt(LocalDateTime.now());
+              }
+              return d;
+            });
+  }
 
   @Test
   public void createDraw_withValidRequest_shouldReturn201WithDrawJson() throws Exception {
     // Given: Valid JWT token and create draw request
-    String validJwtToken =
-        "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
+    String validJwtToken = "Bearer " + TestTokenGenerator.generateValidAccessToken();
     String createDrawRequest =
         "{"
             + "\"title\": \"Family Christmas Draw\","
@@ -76,8 +109,7 @@ public class DrawsCreateContractTest {
   @Test
   public void createDraw_withMinimalRequest_shouldReturn201WithDrawJson() throws Exception {
     // Given: Valid JWT token and minimal create draw request (only required fields)
-    String validJwtToken =
-        "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
+    String validJwtToken = "Bearer " + TestTokenGenerator.generateValidAccessToken();
     String createDrawRequest =
         "{" + "\"title\": \"Simple Draw\"," + "\"drawDate\": \"2024-12-20\"" + "}";
 
@@ -131,8 +163,7 @@ public class DrawsCreateContractTest {
   @Test
   public void createDraw_withMissingTitle_shouldReturn400() throws Exception {
     // Given: Valid JWT token but request missing required title
-    String validJwtToken =
-        "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
+    String validJwtToken = "Bearer " + TestTokenGenerator.generateValidAccessToken();
     String createDrawRequest =
         "{" + "\"description\": \"Draw without title\"," + "\"drawDate\": \"2024-12-15\"" + "}";
 
@@ -148,8 +179,7 @@ public class DrawsCreateContractTest {
   @Test
   public void createDraw_withMissingDrawDate_shouldReturn400() throws Exception {
     // Given: Valid JWT token but request missing required drawDate
-    String validJwtToken =
-        "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
+    String validJwtToken = "Bearer " + TestTokenGenerator.generateValidAccessToken();
     String createDrawRequest =
         "{"
             + "\"title\": \"Draw without date\","
@@ -168,8 +198,7 @@ public class DrawsCreateContractTest {
   @Test
   public void createDraw_withTitleTooLong_shouldReturn400() throws Exception {
     // Given: Valid JWT token but title exceeds 100 characters
-    String validJwtToken =
-        "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
+    String validJwtToken = "Bearer " + TestTokenGenerator.generateValidAccessToken();
     String longTitle = "A".repeat(101); // 101 characters, exceeds 100 char limit
     String createDrawRequest =
         "{" + "\"title\": \"" + longTitle + "\"," + "\"drawDate\": \"2024-12-15\"" + "}";
@@ -186,8 +215,7 @@ public class DrawsCreateContractTest {
   @Test
   public void createDraw_withDescriptionTooLong_shouldReturn400() throws Exception {
     // Given: Valid JWT token but description exceeds 500 characters
-    String validJwtToken =
-        "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
+    String validJwtToken = "Bearer " + TestTokenGenerator.generateValidAccessToken();
     String longDescription = "A".repeat(501); // 501 characters, exceeds 500 char limit
     String createDrawRequest =
         "{"
@@ -210,8 +238,7 @@ public class DrawsCreateContractTest {
   @Test
   public void createDraw_withMaxParticipantsTooLow_shouldReturn400() throws Exception {
     // Given: Valid JWT token but maxParticipants below minimum (2)
-    String validJwtToken =
-        "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
+    String validJwtToken = "Bearer " + TestTokenGenerator.generateValidAccessToken();
     String createDrawRequest =
         "{"
             + "\"title\": \"Invalid Participants Draw\","
@@ -231,8 +258,7 @@ public class DrawsCreateContractTest {
   @Test
   public void createDraw_withMaxParticipantsTooHigh_shouldReturn400() throws Exception {
     // Given: Valid JWT token but maxParticipants above maximum (30)
-    String validJwtToken =
-        "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
+    String validJwtToken = "Bearer " + TestTokenGenerator.generateValidAccessToken();
     String createDrawRequest =
         "{"
             + "\"title\": \"Too Many Participants Draw\","
@@ -252,8 +278,7 @@ public class DrawsCreateContractTest {
   @Test
   public void createDraw_withInvalidDateFormat_shouldReturn400() throws Exception {
     // Given: Valid JWT token but invalid date format
-    String validJwtToken =
-        "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
+    String validJwtToken = "Bearer " + TestTokenGenerator.generateValidAccessToken();
     String createDrawRequest =
         "{"
             + "\"title\": \"Invalid Date Draw\","
@@ -272,8 +297,7 @@ public class DrawsCreateContractTest {
   @Test
   public void createDraw_withEmptyBody_shouldReturn400() throws Exception {
     // Given: Valid JWT token but empty request body
-    String validJwtToken =
-        "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
+    String validJwtToken = "Bearer " + TestTokenGenerator.generateValidAccessToken();
 
     // When: POST /api/v1/draws with empty body
     // Then: Should return 400 Bad Request
@@ -287,8 +311,7 @@ public class DrawsCreateContractTest {
   @Test
   public void createDraw_withMalformedJson_shouldReturn400() throws Exception {
     // Given: Valid JWT token but malformed JSON
-    String validJwtToken =
-        "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
+    String validJwtToken = "Bearer " + TestTokenGenerator.generateValidAccessToken();
     String malformedJson = "{\"title\": \"Test Draw\", \"drawDate\": "; // Missing closing
 
     // When: POST /api/v1/draws with malformed JSON
