@@ -109,14 +109,14 @@
 - [x] T043 DrawingController drawing operations in `backend/src/main/java/controller/DrawingController.java`
 
 ## Phase 3.8: Frontend Core Components
-- [ ] T044 [P] Authentication service with OAuth integration in `frontend/src/services/authService.ts`
-- [ ] T045 [P] API client service in `frontend/src/services/apiService.ts`
-- [ ] T046 [P] Draw management service in `frontend/src/services/drawService.ts`
-- [ ] T047 [P] Login page component in `frontend/src/pages/LoginPage.tsx`
-- [ ] T048 [P] Dashboard page component in `frontend/src/pages/DashboardPage.tsx`
-- [ ] T049 [P] Create draw page component in `frontend/src/pages/CreateDrawPage.tsx`
-- [ ] T050 [P] Draw detail page component in `frontend/src/pages/DrawDetailPage.tsx`
-- [ ] T051 [P] Drawing page component in `frontend/src/pages/DrawingPage.tsx`
+- [x] T044 [P] Authentication service with OAuth integration in `frontend/src/services/authService.ts`
+- [x] T045 [P] API client service in `frontend/src/services/apiService.ts`
+- [x] T046 [P] Draw management service in `frontend/src/services/drawService.ts`
+- [x] T047 [P] Login page component in `frontend/src/pages/LoginPage.tsx`
+- [x] T048 [P] Dashboard page component in `frontend/src/pages/DashboardPage.tsx`
+- [x] T049 [P] Create draw page component in `frontend/src/pages/CreateDrawPage.tsx`
+- [x] T050 [P] Draw detail page component in `frontend/src/pages/DrawDetailPage.tsx`
+- [x] T051 [P] Drawing page component in `frontend/src/pages/DrawingPage.tsx`
 
 ## Phase 3.9: Frontend Component Tests
 - [ ] T052 [P] Login page component test in `frontend/tests/components/LoginPage.test.tsx`
