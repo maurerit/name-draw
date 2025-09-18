@@ -94,3 +94,11 @@ CREATE MEMORY TABLE draw_queue (
     -- Foreign key constraint
     CONSTRAINT fk_draw_queue_draw FOREIGN KEY (draw_id) REFERENCES draws(id) ON DELETE CASCADE
 );
+
+-- Create JoinQueue table (in-memory for join concurrency control)
+CREATE MEMORY TABLE join_queue (
+    draw_id UUID PRIMARY KEY,
+
+    -- Foreign key constraint
+    CONSTRAINT fk_join_queue_draw FOREIGN KEY (draw_id) REFERENCES draws(id) ON DELETE CASCADE
+);

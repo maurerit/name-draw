@@ -1,8 +1,12 @@
 package com.namedraw.repository;
 
 import com.namedraw.model.DrawQueue;
+import jakarta.transaction.Transactional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 /**
@@ -47,4 +51,9 @@ public interface DrawQueueRepository extends JpaRepository<DrawQueue, UUID> {
    * @return the number of records deleted (should be 0 or 1)
    */
   int deleteByDrawId(UUID drawId);
+
+  @Modifying
+  @Transactional
+  @Query(value = "INSERT INTO draw_queue (draw_id) VALUES (:drawId)", nativeQuery = true)
+  int tryLock(@Param("drawId") UUID drawId);
 }

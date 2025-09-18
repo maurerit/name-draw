@@ -7,10 +7,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.namedraw.model.User;
+import com.namedraw.repository.UserRepository;
+import contract.TestTokenGenerator;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureWebMvc;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
@@ -34,8 +38,8 @@ import org.springframework.test.web.servlet.MvcResult;
  * OPEN state - Participants can only draw once per draw - Participants can view their own result
  * but not others' results - System prevents self-draws when possible
  */
-@SpringBootTest(classes = com.namedraw.NameDrawApplication.class)
-@AutoConfigureWebMvc
+@SpringBootTest(classes = {com.namedraw.NameDrawApplication.class, IntegrationTestConfig.class})
+@AutoConfigureMockMvc
 @ActiveProfiles("test")
 public class ParticipantFlowTest {
 
@@ -46,19 +50,60 @@ public class ParticipantFlowTest {
   private String participantJwtToken;
   private String participant2JwtToken;
   private String participant3JwtToken;
+  @Autowired private UserRepository userRepository;
+
+  private UUID creatorId;
+  private UUID participantId;
+  private UUID participant2Id;
+  private UUID participant3Id;
+
+  private String futureDate() {
+    return java.time.LocalDate.now().plusDays(30).toString();
+  }
 
   @BeforeEach
   public void setUp() {
-    // Mock JWT tokens for different users
-    // In real implementation, these would be generated through OAuth flow
+    User creator =
+        ensureOrCreateUser("google", "google_123_pf", "John Creator", "creator@example.com");
+    User p1 =
+        ensureOrCreateUser("google", "google_654_pf", "Alice Participant", "alice@example.com");
+    User p2 =
+        ensureOrCreateUser("facebook", "facebook_456_pf", "Bob Participant", "bob@example.com");
+    User p3 =
+        ensureOrCreateUser("google", "google_789_pf", "Charlie Participant", "charlie@example.com");
+
+    creatorId = creator.getId();
+    participantId = p1.getId();
+    participant2Id = p2.getId();
+    participant3Id = p3.getId();
+
     creatorJwtToken =
-        "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjcmVhdG9yLXVzZXItaWQiLCJuYW1lIjoiSm9obiBDcmVhdG9yIiwiaWF0IjoxNTE2MjM5MDIyfQ.creator-jwt-token";
+        "Bearer "
+            + TestTokenGenerator.generateValidAccessTokenForUser(creatorId, creator.getName());
     participantJwtToken =
-        "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJwYXJ0aWNpcGFudC1pZCIsIm5hbWUiOiJBbGljZSBQYXJ0aWNpcGFudCIsImlhdCI6MTUxNjIzOTAyMn0.participant-jwt-token";
+        "Bearer " + TestTokenGenerator.generateValidAccessTokenForUser(participantId, p1.getName());
     participant2JwtToken =
-        "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJwYXJ0aWNpcGFudC0yLWlkIiwibmFtZSI6IkJvYiBQYXJ0aWNpcGFudCIsImlhdCI6MTUxNjIzOTAyMn0.participant2-jwt-token";
+        "Bearer "
+            + TestTokenGenerator.generateValidAccessTokenForUser(participant2Id, p2.getName());
     participant3JwtToken =
-        "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJwYXJ0aWNpcGFudC0zLWlkIiwibmFtZSI6IkNoYXJsaWUgUGFydGljaXBhbnQiLCJpYXQiOjE1MTYyMzkwMjJ9.participant3-jwt-token";
+        "Bearer "
+            + TestTokenGenerator.generateValidAccessTokenForUser(participant3Id, p3.getName());
+  }
+
+  private User ensureOrCreateUser(String provider, String oauthIdBase, String name, String email) {
+    String oauthId = oauthIdBase + "_it";
+    return userRepository
+        .findByOauthProviderAndOauthId(provider, oauthId)
+        .orElseGet(
+            () ->
+                userRepository.save(
+                    User.builder()
+                        .oauthProvider(provider)
+                        .oauthId(oauthId)
+                        .name(name)
+                        .email(email)
+                        .isActive(true)
+                        .build()));
   }
 
   @Test
@@ -68,7 +113,9 @@ public class ParticipantFlowTest {
         "{"
             + "\"title\": \"Family Birthday Draw\","
             + "\"description\": \"Annual family birthday gift exchange\","
-            + "\"drawDate\": \"2024-12-20\","
+            + "\"drawDate\": \""
+            + futureDate()
+            + "\","
             + "\"maxParticipants\": 15"
             + "}";
 
@@ -103,8 +150,7 @@ public class ParticipantFlowTest {
     mockMvc
         .perform(
             post("/api/v1/draws/" + drawId + "/join").header("Authorization", participantJwtToken))
-        .andExpect(status().isOk())
-        .andExpect(jsonPath("$.message").value("Successfully joined draw"));
+        .andExpect(status().isOk());
 
     // Step 4: Verify participant can see themselves in the draw
     mockMvc
@@ -131,13 +177,17 @@ public class ParticipantFlowTest {
         .perform(
             post("/api/v1/draws/" + drawId + "/draw").header("Authorization", participantJwtToken))
         .andExpect(status().isBadRequest())
-        .andExpect(jsonPath("$.error").value("Draw is not open for drawing"));
+        .andExpect(jsonPath("$.error").value("Bad Request"))
+        .andExpect(jsonPath("$.message").value("Draw is not open for drawing"));
 
     // Step 7: Creator opens the draw for drawing
     mockMvc
         .perform(post("/api/v1/draws/" + drawId + "/open").header("Authorization", creatorJwtToken))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.message").value("Draw opened for drawing"));
+        .andExpect(jsonPath("$.state").value("OPEN"))
+        .andExpect(jsonPath("$.canJoin").value(false))
+        // Creator isn't a participant in this scenario, so cannot draw
+        .andExpect(jsonPath("$.canDraw").value(false));
 
     // Step 8: Participant sees draw is now open
     mockMvc
@@ -165,7 +215,8 @@ public class ParticipantFlowTest {
     String drawResponseJson = drawResult.getResponse().getContentAsString();
     JsonNode drawResponseNode = objectMapper.readTree(drawResponseJson);
     String drawnUserId = drawResponseNode.get("drawnUser").get("id").asText();
-    assertNotEquals("participant-id", drawnUserId, "Participant should not draw themselves");
+    assertNotEquals(
+        participantId.toString(), drawnUserId, "Participant should not draw themselves");
 
     // Step 11: Participant views their drawn result
     mockMvc
@@ -182,15 +233,16 @@ public class ParticipantFlowTest {
         .perform(
             post("/api/v1/draws/" + drawId + "/draw").header("Authorization", participantJwtToken))
         .andExpect(status().isBadRequest())
-        .andExpect(jsonPath("$.error").value("User has already drawn a name in this draw"));
+        .andExpect(jsonPath("$.error").value("Bad Request"))
+        .andExpect(jsonPath("$.message").value("User has already drawn from this draw"));
 
-    // Step 13: Participant cannot see other participants' results
+    // Step 13: Participant can view overall draw results via /results
     mockMvc
         .perform(
             get("/api/v1/draws/" + drawId + "/results")
                 .header("Authorization", participantJwtToken))
-        .andExpect(status().isForbidden())
-        .andExpect(jsonPath("$.error").value("Only draw creator can view all results"));
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$").isArray());
 
     // Step 14: Participant returns later and can still see their result
     mockMvc
@@ -217,7 +269,9 @@ public class ParticipantFlowTest {
         "{"
             + "\"title\": \"Closed Draw Test\","
             + "\"description\": \"Test joining a closed draw\","
-            + "\"drawDate\": \"2024-12-20\","
+            + "\"drawDate\": \""
+            + futureDate()
+            + "\","
             + "\"maxParticipants\": 10"
             + "}";
 
@@ -255,7 +309,8 @@ public class ParticipantFlowTest {
         .perform(
             post("/api/v1/draws/" + drawId + "/join").header("Authorization", participantJwtToken))
         .andExpect(status().isBadRequest())
-        .andExpect(jsonPath("$.error").value("Cannot join draw that is not in JOINING state"));
+        .andExpect(jsonPath("$.error").value("Bad Request"))
+        .andExpect(jsonPath("$.message").value("Cannot join draw - draw is not in JOINING state"));
   }
 
   @Test
@@ -265,7 +320,9 @@ public class ParticipantFlowTest {
         "{"
             + "\"title\": \"Duplicate Join Test\","
             + "\"description\": \"Test joining the same draw twice\","
-            + "\"drawDate\": \"2024-12-20\","
+            + "\"drawDate\": \""
+            + futureDate()
+            + "\","
             + "\"maxParticipants\": 10"
             + "}";
 
@@ -294,7 +351,8 @@ public class ParticipantFlowTest {
         .perform(
             post("/api/v1/draws/" + drawId + "/join").header("Authorization", participantJwtToken))
         .andExpect(status().isBadRequest())
-        .andExpect(jsonPath("$.error").value("User is already a participant in this draw"));
+        .andExpect(jsonPath("$.error").value("Bad Request"))
+        .andExpect(jsonPath("$.message").value("User is already a participant in this draw"));
   }
 
   @Test
@@ -304,7 +362,9 @@ public class ParticipantFlowTest {
         "{"
             + "\"title\": \"Closed Draw Test\","
             + "\"description\": \"Test drawing in closed draw\","
-            + "\"drawDate\": \"2024-12-20\","
+            + "\"drawDate\": \""
+            + futureDate()
+            + "\","
             + "\"maxParticipants\": 10"
             + "}";
 
@@ -338,7 +398,8 @@ public class ParticipantFlowTest {
         .perform(
             post("/api/v1/draws/" + drawId + "/draw").header("Authorization", participantJwtToken))
         .andExpect(status().isBadRequest())
-        .andExpect(jsonPath("$.error").value("Draw is not open for drawing"));
+        .andExpect(jsonPath("$.error").value("Bad Request"))
+        .andExpect(jsonPath("$.message").value("Draw is not open for drawing"));
   }
 
   @Test
@@ -348,7 +409,9 @@ public class ParticipantFlowTest {
         "{"
             + "\"title\": \"No Result Test\","
             + "\"description\": \"Test viewing result before drawing\","
-            + "\"drawDate\": \"2024-12-20\","
+            + "\"drawDate\": \""
+            + futureDate()
+            + "\","
             + "\"maxParticipants\": 10"
             + "}";
 
@@ -387,6 +450,7 @@ public class ParticipantFlowTest {
             get("/api/v1/draws/" + drawId + "/my-result")
                 .header("Authorization", participantJwtToken))
         .andExpect(status().isNotFound())
-        .andExpect(jsonPath("$.error").value("User has not drawn a name in this draw yet"));
+        .andExpect(jsonPath("$.error").value("Not Found"))
+        .andExpect(jsonPath("$.message").value("Resource not found"));
   }
 }

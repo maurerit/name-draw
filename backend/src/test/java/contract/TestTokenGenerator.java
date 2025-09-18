@@ -136,6 +136,36 @@ public class TestTokenGenerator {
         .compact();
   }
 
+  /**
+   * Generates a valid access token for an arbitrary user ID and optional display name.
+   *
+   * <p>The token will be signed with the same HS384 algorithm and test secret used by the
+   * application under the "test" profile so it can be validated by SecurityConfig's decoder.
+   *
+   * @param userId UUID of the user the token represents (will be set as JWT subject)
+   * @param name Optional display name to embed in claims (can be null)
+   * @return signed JWT string
+   */
+  public static String generateValidAccessTokenForUser(java.util.UUID userId, String name) {
+    Map<String, Object> claims = new HashMap<>();
+    claims.put("type", "access");
+    claims.put("userId", userId.toString());
+    if (name != null) {
+      claims.put("name", name);
+    }
+
+    Instant now = Instant.now();
+    Instant expiry = now.plus(1, ChronoUnit.HOURS);
+
+    return Jwts.builder()
+        .subject(userId.toString())
+        .claims(claims)
+        .issuedAt(Date.from(now))
+        .expiration(Date.from(expiry))
+        .signWith(SIGNING_KEY, Jwts.SIG.HS384)
+        .compact();
+  }
+
   /** Returns a malformed token string. */
   public static String getMalformedToken() {
     return "invalid.malformed.token";

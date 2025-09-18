@@ -3,11 +3,14 @@ package com.namedraw.repository;
 import com.namedraw.model.Draw;
 import com.namedraw.model.Draw.DrawState;
 import com.namedraw.model.User;
+import jakarta.persistence.LockModeType;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -26,6 +29,16 @@ import org.springframework.stereotype.Repository;
  */
 @Repository
 public interface DrawRepository extends JpaRepository<Draw, UUID> {
+
+  /**
+   * Finds a draw by ID acquiring a pessimistic write lock.
+   *
+   * <p>Use this to serialize concurrent modifications to the same draw (e.g., joining at capacity).
+   * Ensures only one transaction can modify the row at a time.
+   */
+  @Lock(LockModeType.PESSIMISTIC_WRITE)
+  @Query("SELECT d FROM Draw d WHERE d.id = :id")
+  Optional<Draw> findByIdForUpdate(@Param("id") UUID id);
 
   /**
    * Finds all draws created by a specific user.
@@ -306,4 +319,25 @@ public interface DrawRepository extends JpaRepository<Draw, UUID> {
                                    WHERE p.draw = d)
       """)
   List<Draw> findDrawsWithIncorrectParticipantCount();
+
+  /**
+   * Attempts to increment the participant count atomically only if the draw is in JOINING state and
+   * has not reached maximum capacity.
+   *
+   * <p>Returns 1 if the increment was applied, 0 otherwise.
+   */
+  @Modifying
+  @Query(
+      value =
+          "UPDATE draws\n"
+              + "   SET participant_count = participant_count + 1,\n"
+              + "       state = CASE WHEN participant_count + 1 >= max_participants\n"
+              + "                     THEN 'OPEN' ELSE state END,\n"
+              + "       opened_at = CASE WHEN participant_count + 1 >= max_participants\n"
+              + "                        THEN :now ELSE opened_at END\n"
+              + " WHERE id = :id\n"
+              + "   AND state = 'JOINING'\n"
+              + "   AND participant_count < max_participants",
+      nativeQuery = true)
+  int tryIncrementParticipantCount(@Param("id") UUID id, @Param("now") java.time.LocalDateTime now);
 }
