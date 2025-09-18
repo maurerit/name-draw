@@ -109,8 +109,8 @@
 - [x] T043 DrawingController drawing operations in `backend/src/main/java/controller/DrawingController.java`
 
 ## Phase 3.8: Frontend Core Components
-- [ ] T044 [P] Authentication service with OAuth integration in `frontend/src/services/authService.ts`
-- [ ] T045 [P] API client service in `frontend/src/services/apiService.ts`
+- [x] T044 [P] Authentication service with OAuth integration in `frontend/src/services/authService.ts`
+- [x] T045 [P] API client service in `frontend/src/services/apiService.ts`
 - [ ] T046 [P] Draw management service in `frontend/src/services/drawService.ts`
 - [ ] T047 [P] Login page component in `frontend/src/pages/LoginPage.tsx`
 - [ ] T048 [P] Dashboard page component in `frontend/src/pages/DashboardPage.tsx`
