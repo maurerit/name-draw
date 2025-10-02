@@ -126,10 +126,10 @@
 - [x] T056 [P] Drawing page component test in `frontend/tests/components/DrawingPage.test.tsx`
 
 ## Phase 3.10: Integration and Security
-- [ ] T057 JWT token service integration in `backend/src/main/java/security/JwtTokenService.java`
-- [ ] T058 Spring Security configuration in `backend/src/main/java/config/SecurityConfig.java`
-- [ ] T059 CORS configuration in `backend/src/main/java/config/CorsConfig.java`
-- [ ] T060 Error handling and validation in `backend/src/main/java/exception/GlobalExceptionHandler.java`
+- [x] T057 JWT token service integration in `backend/src/main/java/com/namedraw/security/JwtTokenService.java`
+- [x] T058 Spring Security configuration in `backend/src/main/java/com/namedraw/security/SecurityConfig.java`
+- [x] T059 CORS configuration in `backend/src/main/java/com/namedraw/config/CorsConfig.java`
+- [x] T060 Error handling and validation in `backend/src/main/java/com/namedraw/controller/GlobalExceptionHandler.java`
 
 ## Phase 3.11: Docker and Deployment
 - [ ] T061 [P] Backend Docker image optimization in `backend/Dockerfile`

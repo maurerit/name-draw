@@ -88,7 +88,10 @@ public class SecurityConfig {
    */
   @Bean
   public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-    http.authorizeHttpRequests(
+    http
+        // Enable CORS using bean from CorsConfig
+        .cors(cors -> {})
+        .authorizeHttpRequests(
             authz ->
                 authz
                     // Allow OAuth authentication endpoints except logout which requires auth
